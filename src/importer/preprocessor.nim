@@ -1,3 +1,19 @@
+import std / strutils
+
+import lineinfos, pathutils
+import ast, clexer, cparser
+
+proc eatNewLine(p: var Parser, n: PNode) =
+  if p.tok.xkind == pxLineComment:
+    skipCom(p, n)
+    if p.tok.xkind == pxNewLine: getTok(p)
+  elif p.tok.xkind == pxNewLine:
+    eat(p, pxNewLine)
+
+proc skipLine(p: var Parser) =
+  while p.tok.xkind notin {pxEof, pxNewLine, pxLineComment}:
+    getTok(p)
+  eatNewLine(p, nil)
 
 proc parseRemoveIncludes*(p: var Parser, infile: string): PNode =
   # parse everything but strip extra includes
@@ -7,12 +23,12 @@ proc parseRemoveIncludes*(p: var Parser, infile: string): PNode =
       let num = parseInt(p.tok.s)
       # ignore unimportant/unknown directive ("undef", "pragma", "error")
       rawGetTok(p)
-      let li = newLineInfo(gConfig, AbsoluteFile p.tok.s, num, 0)
+      let li = newLineInfo(AbsoluteFile p.tok.s, num, 0)
       # echo "SKIP: ", num, " :: ", toProjPath(gConfig, li)
       result = (newNodeI(nkComesFrom, li), AbsoluteFile p.tok.s)
     except ValueError:
-      var code = newNodeP(nkTripleStrLit, p)
-      code.strVal.add(p.lex.getCurrentLine(false))
+      var code = newNodeP(nkRawCode, p)
+      code.strVals.add(p.lex.getCurrentLine())
       result = (code, AbsoluteFile "")
     skipLine(p)
     # eatNewLine(p, nil)
@@ -37,30 +53,28 @@ proc parseRemoveIncludes*(p: var Parser, infile: string): PNode =
       if isInFile:
         result.add(res[0])
 
-    var code = newNodeP(nkTripleStrLit, p)
-    var lastpos = p.lex.bufpos
-    var lastlen = p.lex.sentinel - lastpos
+    var code = newNodeP(nkRawCode, p)
     while p.tok.xkind notin {pxEof, pxDirective}:
       if p.tok.xkind == pxLineComment:
-        code.strVal.add("\n")
+        code.strVals.add("\n")
         for line in p.tok.s.splitLines():
-          code.strVal.add("\n")
-          code.strVal.add("//")
-          code.strVal.add(line)
-        code.strVal.add("\n")
+          code.strVals.add("\n")
+          code.strVals.add("//")
+          code.strVals.add(line)
+        code.strVals.add("\n")
       elif p.tok.xkind == pxStarComment:
-        code.strVal.add("/*")
-        code.strVal.add(p.tok.s)
-        code.strVal.add("*/")
-      elif lastpos >= p.lex.bufpos:
-        var tmp = " "
-        tmp.add($p.tok[])
-        code.strVal.add(tmp)
+        code.strVals.add("/*")
+        code.strVals.add(p.tok.s)
+        code.strVals.add("*/")
+      # elif lastpos >= p.lex.bufpos:
+      #   var tmp = " "
+      #   tmp.add($p.tok[])
+      #   code.strVal.add(tmp)
       else:
-        let tmp = p.lex.buf[lastpos..<p.lex.bufpos]
-        code.strVal.add($tmp)
-      lastpos = p.lex.bufpos
-      lastlen = p.lex.sentinel - lastpos
+        # let tmp = p.lex.buf[lastpos..<p.lex.bufpos]
+        code.strVals.add(p.lex.getCurrentLine())
+      # lastpos = p.lex.bufpos
+      # lastlen = p.lex.sentinel - lastpos
       getTok(p)
     
     # add code

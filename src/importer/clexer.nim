@@ -13,7 +13,9 @@
 
 import std/[lexbase, streams, strutils]
 
+export lexbase
 import lineinfos
+import pathutils
 
 const
   MaxLineLength* = 80         # lines longer than this lead to a warning
@@ -151,7 +153,7 @@ proc getColumn*(L: Lexer): int =
   result = getColNumber(L, L.bufPos)
 
 proc getLineInfo*(L: Lexer): TLineInfo =
-  result = newLineInfo(L.fileIndex, L.linenumber, getColNumber(L, L.bufpos))
+  result = newLineInfo(AbsoluteFile L.fileIndex, L.linenumber, getColNumber(L, L.bufpos))
 
 proc lexMessage*(L: Lexer, msg: TMsgKind, arg = "") =
   if L.debugMode: writeStackTrace()

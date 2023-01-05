@@ -211,7 +211,7 @@ type
                                # only 8 bytes.
     line*: uint16
     col*: int16
-    fileIndex*: string
+    fileIndex*: AbsoluteFile
     when defined(nimpretty):
       offsetA*, offsetB*: int
       commentOffsetA*, commentOffsetB*: int
@@ -236,7 +236,7 @@ const
 proc unknownLineInfo*(): TLineInfo =
   result.line = uint16(0)
   result.col = int16(-1)
-  result.fileIndex = ""
+  result.fileIndex = AbsoluteFile ""
 
 type
   Severity* {.pure.} = enum ## VS Code only supports these three
@@ -268,7 +268,7 @@ proc initMsgConfig*(): MsgConfig =
   result.fileInfos = @[]
   result.errorOutputs = {eStdOut, eStdErr}
 
-proc newLineInfo*(fileInfoIdx: string, line, col: int): TLineInfo =
+proc newLineInfo*(fileInfoIdx: AbsoluteFile, line, col: int): TLineInfo =
   result.fileIndex = fileInfoIdx
   if line < int high(uint16):
     result.line = uint16(line)
