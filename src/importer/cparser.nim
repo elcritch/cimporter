@@ -276,7 +276,7 @@ proc parseMacroArguments(p: var Parser): seq[seq[ref Token]] =
     var kind = p.tok.xkind
     case kind
     of pxEof: rawEat(p, pxParRi)
-    of pxParLe, pxBracketLe, pxCurlyLe:
+    of pxParLe, pxCurlyLe:
       inc(i[kind])
       result[L].add(p.tok)
     of pxParRi:
