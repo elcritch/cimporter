@@ -151,10 +151,10 @@ when not defined(testing) and isMainModule:
   import os
   var s = newFileStream(paramStr(1), fmRead)
   if s == nil: quit("cannot open the file" & paramStr(1))
+
   var x: PpParser
   open(x, s, paramStr(1))
   while readLine(x):
     echo "new row: "
-    for val in items(x.row):
-      echo "##", val, "##"
+    echo ">>", x.line
   close(x)
