@@ -37,6 +37,7 @@ const
 
 type
   Tokkind* = enum
+    pxOther,
     pxInvalid, pxEof,
     pxMacroParam,             # fake token: macro parameter (with its index)
     pxMacroParamToStr,        # macro parameter (with its index) applied to the
@@ -124,6 +125,7 @@ proc tokKindToStr*(k: Tokkind): string =
   case k
   of pxEof: result = "[EOF]"
   of pxInvalid: result = "[invalid]"
+  of pxOther: result = "[invalid]"
   of pxMacroParam, pxMacroParamToStr: result = "[macro param]"
   of pxStarComment, pxLineComment: result = "[comment]"
   of pxStrLit: result = "[string literal]"
@@ -206,20 +208,6 @@ proc getNumber(L: var Lexer, tok: var Token) =
     tok.xkind = pxInvalid
   else:
     tok.xkind = pxIntLit
-
-# proc baseHandleCRLF(L: var BaseLexer, pos: int): int =
-#   template registerLine =
-#     let col = L.getColNumber(pos)
-#     if col > MaxLineLength:
-#       lexMessagePos(L, hintLineTooLong, pos)
-#   case L.buf[pos]
-#   of CR:
-#     registerLine()
-#     result = lexbase.handleCR(L, pos)
-#   of LF:
-#     registerLine()
-#     result = lexbase.handleLF(L, pos)
-#   else: result = pos
 
 proc handleCRLF(L: var Lexer, pos: int): int =
   case L.buf[pos]
@@ -371,6 +359,37 @@ proc getSymbol(L: var Lexer, tok: var Token) =
     inc(pos)
   L.bufpos = pos
   tok.xkind = pxSymbol
+
+proc scanCodeLine(L: var Lexer, tok: var Token) =
+  var pos = L.bufpos
+  var buf = L.buf
+  # a comment ends if the next line does not start with the // on the same
+  # column after only whitespace
+  tok.xkind = pxLineComment
+  var col = getColNumber(L, pos)
+
+  while true:
+    inc(pos, 2) # skip //
+    if buf[pos] == '/':
+      inc(pos, 1) # skip /// 
+    while buf[pos] notin {CR, LF, lexbase.EndOfFile}:
+      add(tok.s, buf[pos])
+      inc(pos)
+    pos = handleCRLF(L, pos)
+    buf = L.buf
+    var indent = 0
+    while buf[pos] == ' ':
+      inc(pos)
+      inc(indent)
+    if col == indent and buf[pos] == '/' and buf[pos+1] == '/':
+      add(tok.s, "\n")
+    else:
+      break
+  
+  while tok.s.len > 0 and tok.s[^1] in {'\t', ' '}:
+    setLen(tok.s, tok.s.len-1)
+  
+  L.bufpos = pos
 
 proc scanLineComment(L: var Lexer, tok: var Token) =
   var pos = L.bufpos
@@ -526,9 +545,12 @@ proc getTok*(L: var Lexer, tok: var Token) =
   tok.xkind = pxInvalid
   fillToken(tok)
   skip(L, tok)
-  if tok.xkind == pxNewLine: return
   var c = L.buf[L.bufpos]
   tok.lineNumber = L.lineNumber
+
+  # if tok.xkind == pxNewLine:
+  #   return
+
   if c in SymStartChars:
     getSymbol(L, tok)
     if L.buf[L.bufpos] == '"':
@@ -589,7 +611,7 @@ proc getTok*(L: var Lexer, tok: var Token) =
       tok.xkind = pxEof
     else:
       tok.s = $c
-      tok.xkind = pxInvalid
-      lexMessage(L, errGenerated, "invalid token " & c & " (\\" & $(ord(c)) & ')')
+      tok.xkind = pxOther
+      # lexMessage(L, errGenerated, "invalid token " & c & " (\\" & $(ord(c)) & ')')
       inc(L.bufpos)
 
