@@ -5,9 +5,14 @@ import strutils, lexbase, streams, tables
 import lexbase, streams
 
 type
-  PpLine* = seq[string] ## A row in a Pp file.
+  PpLineDirective* = object
+    lineNumber*: int
+    filename*: string
+    remainder*: string
+
   PpParser* = object of BaseLexer ## The parser object.
-    line*: PpLine
+    line*: string
+    directive*: PpLineDirective
     filename: string
     sep, quote, esc: char
     skipWhite: bool
@@ -53,7 +58,7 @@ proc open*(self: var PpParser, filename: string,
   open(self, s, filename, separator,
        quote, escape, skipInitialSpace)
 
-proc parseLine(self: var PpParser, val: var string) =
+proc parseNext(self: var PpParser, val: var string) =
   var pos = self.bufpos
 
   val.setLen(0) # reuse memory
@@ -124,7 +129,7 @@ proc readLine*(self: var PpParser, columns = 0): bool =
     if oldlen < col + 1:
       setLen(self.line, col + 1)
       self.line[col] = ""
-    parseLine(self, self.line[col])
+    parseNext(self, self.line)
     inc(col)
     if self.buf[self.bufpos] == self.sep:
       inc(self.bufpos)
