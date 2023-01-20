@@ -53,10 +53,9 @@ proc open*(self: var PpParser, filename: string,
   open(self, s, filename, separator,
        quote, escape, skipInitialSpace)
 
-proc parseField(self: var PpParser, val: var string) =
+proc parseLine(self: var PpParser, val: var string) =
   var pos = self.bufpos
-  if self.skipWhite:
-    while self.buf[pos] in {' ', '\t'}: inc(pos)
+
   val.setLen(0) # reuse memory
   if self.buf[pos] == self.quote and self.quote != '\0':
     inc(pos)
@@ -67,14 +66,21 @@ proc parseField(self: var PpParser, val: var string) =
         error(self, pos, self.quote & " expected")
         break
       elif c in {'"', '\''}:
-        if self.esc == '\0' and self.buf[pos + 1] in {'"', '\''}:
+        if self.buf[pos+1] in {'"', '\''}:
+          val.add(self.buf[pos+1])
+          inc(pos, 2)
+        else:
+          inc(pos)
+          break
+      elif c == '/':
+        if self.esc == '\0' and self.buf[pos+1] in {'"', '\''}:
           val.add(self.buf[pos+1])
           inc(pos, 2)
         else:
           inc(pos)
           break
       elif c == '\\':
-        val.add self.buf[pos + 1]
+        val.add self.buf[pos+1]
         inc(pos, 2)
       else:
         case c
@@ -118,7 +124,7 @@ proc readLine*(self: var PpParser, columns = 0): bool =
     if oldlen < col + 1:
       setLen(self.line, col + 1)
       self.line[col] = ""
-    parseField(self, self.line[col])
+    parseLine(self, self.line[col])
     inc(col)
     if self.buf[self.bufpos] == self.sep:
       inc(self.bufpos)
