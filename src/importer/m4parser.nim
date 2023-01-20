@@ -96,58 +96,12 @@ proc parseField(self: var PpParser, a: var string) =
       inc(pos)
   self.bufpos = pos
 
-proc processedRows*(self: var PpParser): int {.inline.} =
-  ## Returns number of the processed rows.
-  ##
-  ## But even if `readLine <#readLine,PpParser,int>`_ arrived at EOF then
-  ## processed rows counter is incremented.
-  runnableExamples:
-    import std/streams
-
-    var strm = newStringStream("One,Two,Three\n1,2,3")
-    var parser: PpParser
-    parser.open(strm, "tmp.Pp")
-    doAssert parser.readLine()
-    doAssert parser.processedRows() == 1
-    doAssert parser.readLine()
-    doAssert parser.processedRows() == 2
-    ## Even if `readLine` arrived at EOF then `processedRows` is incremented.
-    doAssert parser.readLine() == false
-    doAssert parser.processedRows() == 3
-    doAssert parser.readLine() == false
-    doAssert parser.processedRows() == 4
-    parser.close()
-    strm.close()
-
-  self.currRow
-
 proc readLine*(self: var PpParser, columns = 0): bool =
   ## Reads the next row; if `columns` > 0, it expects the row to have
   ## exactly this many columns. Returns false if the end of the file
   ## has been encountered else true.
   ##
   ## Blank lines are skipped.
-  runnableExamples:
-    import std/streams
-    var strm = newStringStream("One,Two,Three\n1,2,3\n\n10,20,30")
-    var parser: PpParser
-    parser.open(strm, "tmp.Pp")
-    doAssert parser.readLine()
-    doAssert parser.row == @["One", "Two", "Three"]
-    doAssert parser.readLine()
-    doAssert parser.row == @["1", "2", "3"]
-    ## Blank lines are skipped.
-    doAssert parser.readLine()
-    doAssert parser.row == @["10", "20", "30"]
-
-    var emptySeq: seq[string]
-    doAssert parser.readLine() == false
-    doAssert parser.row == emptySeq
-    doAssert parser.readLine() == false
-    doAssert parser.row == emptySeq
-
-    parser.close()
-    strm.close()
 
   var col = 0 # current column
   let oldpos = self.bufpos
@@ -192,26 +146,6 @@ proc close*(self: var PpParser) {.inline.} =
   ## Closes the parser `self` and its associated input stream.
   lexbase.close(self)
 
-proc readHeaderRow*(self: var PpParser) =
-  ## Reads the first row and creates a look-up table for column numbers
-  ## See also:
-  ## * `rowEntry proc <#rowEntry,PpParser,string>`_
-  let present = self.readLine()
-  if present:
-    self.headers = self.line
-
-proc rowEntry*(self: var PpParser, entry: string): var string =
-  ## Accesses a specified `entry` from the current row.
-  ##
-  ## Assumes that `readHeaderRow <#readHeaderRow,PpParser>`_ has already been
-  ## called.
-  ##
-  ## If specified `entry` does not exist, raises KeyError.
-  let index = self.headers.find(entry)
-  if index >= 0:
-    result = self.line[index]
-  else:
-    raise newException(KeyError, "Entry `" & entry & "` doesn't exist")
 
 when not defined(testing) and isMainModule:
   import os
