@@ -53,11 +53,11 @@ proc open*(self: var PpParser, filename: string,
   open(self, s, filename, separator,
        quote, escape, skipInitialSpace)
 
-proc parseField(self: var PpParser, a: var string) =
+proc parseField(self: var PpParser, val: var string) =
   var pos = self.bufpos
   if self.skipWhite:
     while self.buf[pos] in {' ', '\t'}: inc(pos)
-  setLen(a, 0) # reuse memory
+  val.setLen(0) # reuse memory
   if self.buf[pos] == self.quote and self.quote != '\0':
     inc(pos)
     while true:
@@ -66,33 +66,33 @@ proc parseField(self: var PpParser, a: var string) =
         self.bufpos = pos # can continue after exception?
         error(self, pos, self.quote & " expected")
         break
-      elif c == self.quote:
-        if self.esc == '\0' and self.buf[pos + 1] == self.quote:
-          add(a, self.quote)
+      elif c in {'"', '\''}:
+        if self.esc == '\0' and self.buf[pos + 1] in {'"', '\''}:
+          val.add(self.buf[pos+1])
           inc(pos, 2)
         else:
           inc(pos)
           break
-      elif c == self.esc:
-        add(a, self.buf[pos + 1])
+      elif c == '\\':
+        val.add self.buf[pos + 1]
         inc(pos, 2)
       else:
         case c
         of '\c':
           pos = handleCR(self, pos)
-          add(a, "\n")
+          val.add "\n"
         of '\l':
           pos = handleLF(self, pos)
-          add(a, "\n")
+          val.add "\n"
         else:
-          add(a, c)
+          val.add c
           inc(pos)
   else:
     while true:
       let c = self.buf[pos]
-      if c == self.sep: break
-      if c in {'\c', '\l', '\0'}: break
-      add(a, c)
+      # if c == self.sep: break
+      # if c in {'\c', '\l', '\0'}: break
+      val.add c
       inc(pos)
   self.bufpos = pos
 
