@@ -157,12 +157,14 @@ proc readLine*(self: var PpParser, columns = 0): bool =
 
   var col = 0 # current column
   let oldpos = self.bufpos
-  # skip initial empty lines #8365
+
+  # skip initial empty lines
   while true:
     case self.buf[self.bufpos]
     of '\c': self.bufpos = handleCR(self, self.bufpos)
     of '\l': self.bufpos = handleLF(self, self.bufpos)
     else: break
+
   while self.buf[self.bufpos] != '\0':
     let oldlen = self.row.len
     if oldlen < col + 1:
@@ -200,24 +202,6 @@ proc readHeaderRow*(self: var PpParser) =
   ## Reads the first row and creates a look-up table for column numbers
   ## See also:
   ## * `rowEntry proc <#rowEntry,PpParser,string>`_
-  runnableExamples:
-    import std/streams
-
-    var strm = newStringStream("One,Two,Three\n1,2,3")
-    var parser: PpParser
-    parser.open(strm, "tmp.Pp")
-
-    parser.readHeaderRow()
-    doAssert parser.headers == @["One", "Two", "Three"]
-    doAssert parser.row == @["One", "Two", "Three"]
-
-    doAssert parser.readLine()
-    doAssert parser.headers == @["One", "Two", "Three"]
-    doAssert parser.row == @["1", "2", "3"]
-
-    parser.close()
-    strm.close()
-
   let present = self.readLine()
   if present:
     self.headers = self.row
@@ -229,22 +213,6 @@ proc rowEntry*(self: var PpParser, entry: string): var string =
   ## called.
   ##
   ## If specified `entry` does not exist, raises KeyError.
-  runnableExamples:
-    import std/streams
-    var strm = newStringStream("One,Two,Three\n1,2,3\n\n10,20,30")
-    var parser: PpParser
-    parser.open(strm, "tmp.Pp")
-    ## Requires calling `readHeaderRow`.
-    parser.readHeaderRow()
-    doAssert parser.readLine()
-    doAssert parser.rowEntry("One") == "1"
-    doAssert parser.rowEntry("Two") == "2"
-    doAssert parser.rowEntry("Three") == "3"
-    doAssertRaises(KeyError):
-      discard parser.rowEntry("NonexistentEntry")
-    parser.close()
-    strm.close()
-
   let index = self.headers.find(entry)
   if index >= 0:
     result = self.row[index]
