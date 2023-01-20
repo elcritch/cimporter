@@ -7,13 +7,7 @@ import lexbase, streams
 type
   PpLine* = seq[string] ## A row in a Pp file.
   PpParser* = object of BaseLexer ## The parser object.
-                                   ##
-                                   ## It consists of two public fields:
-                                   ## * `row` is the current row
-                                   ## * `headers` are the columns that are defined in the Pp file
-                                   ##   (read using `readHeaderRow <#readHeaderRow,PpParser>`_).
-                                   ##   Used with `rowEntry <#rowEntry,PpParser,string>`_).
-    row*: PpLine
+    line*: PpLine
     filename: string
     sep, quote, esc: char
     skipWhite: bool
@@ -166,11 +160,11 @@ proc readLine*(self: var PpParser, columns = 0): bool =
     else: break
 
   while self.buf[self.bufpos] != '\0':
-    let oldlen = self.row.len
+    let oldlen = self.line.len
     if oldlen < col + 1:
-      setLen(self.row, col + 1)
-      self.row[col] = ""
-    parseField(self, self.row[col])
+      setLen(self.line, col + 1)
+      self.line[col] = ""
+    parseField(self, self.line[col])
     inc(col)
     if self.buf[self.bufpos] == self.sep:
       inc(self.bufpos)
@@ -187,7 +181,7 @@ proc readLine*(self: var PpParser, columns = 0): bool =
       else: error(self, self.bufpos, self.sep & " expected")
       break
 
-  setLen(self.row, col)
+  setLen(self.line, col)
   result = col > 0
   if result and col != columns and columns > 0:
     error(self, oldpos + 1, $columns & " columns expected, but found " &
@@ -204,7 +198,7 @@ proc readHeaderRow*(self: var PpParser) =
   ## * `rowEntry proc <#rowEntry,PpParser,string>`_
   let present = self.readLine()
   if present:
-    self.headers = self.row
+    self.headers = self.line
 
 proc rowEntry*(self: var PpParser, entry: string): var string =
   ## Accesses a specified `entry` from the current row.
@@ -215,7 +209,7 @@ proc rowEntry*(self: var PpParser, entry: string): var string =
   ## If specified `entry` does not exist, raises KeyError.
   let index = self.headers.find(entry)
   if index >= 0:
-    result = self.row[index]
+    result = self.line[index]
   else:
     raise newException(KeyError, "Entry `" & entry & "` doesn't exist")
 
