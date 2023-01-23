@@ -98,27 +98,27 @@ proc parseLine(self: var PpParser): SourceLine =
   var pos = self.bufpos
 
   let c = self.buf[pos]
-  echo "got: ", repr(c)
+  # echo "got: ", repr(c)
   if c == lexbase.EndOfFile:
     result = SourceLine(kind: m4Eof)
   elif c == '\0':
-    echo "empty char: "
+    # echo "empty char: "
     result = SourceLine(kind: m4Eof)
     self.bufpos = pos # can continue after exception?
     error(self, pos, " expected")
   elif c in lexbase.NewLines:
-    echo "newline char: "
+    # echo "newline char: "
     result = SourceLine(kind: m4NewLine, newline: "\n")
     result.newline.handleChar(self, pos)
   elif c == '/':
-    echo "maybe comment: "
+    # echo "maybe comment: "
     if self.buf[pos+1] == '*':
-      echo "star comment: "
+      # echo "star comment: "
       result = SourceLine(kind: m4Comment)
       result.comment.add "/*"
       pos.inc(2)
       while true:
-        echo "comment:got: ", repr(self.buf[pos])
+        # echo "comment:got: ", repr(self.buf[pos])
         result.comment.handleChar(self, pos)
         if self.buf[pos] == lexbase.EndOfFile:
           break
