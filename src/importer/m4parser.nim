@@ -74,17 +74,19 @@ proc open*(self: var PpParser, filename: string,
   open(self, s, filename, separator,
        escape, skipInitialSpace)
 
-proc handleChar( val: var string, self: var PpParser, pos: var int) =
+proc handleChar( val: var string, self: var PpParser, pos: var int): bool {.discardable.} =
+  inc(pos)
   case self.buf[pos]
   of '\r':
     pos = handleCR(self, pos)
     val.add "\n"
+    result = true
   of '\n':
     pos = handleLF(self, pos)
     val.add "\n"
+    result = true
   else:
     val.add self.buf[pos]
-    inc(pos)
 
 proc parseLine(self: var PpParser): SourceLine =
   var pos = self.bufpos
@@ -121,7 +123,10 @@ proc parseLine(self: var PpParser): SourceLine =
     result = SourceLine(kind: m4Source)
     while self.buf[pos] != self.sep:
       echo "char:curr: ", repr(self.buf[pos])
-      result.source.handleChar(self, pos)
+      if self.buf[pos] == lexbase.EndOfFile:
+        break
+      if result.source.handleChar(self, pos):
+        break
   
   # while true:
   #   let c = self.buf[pos]
