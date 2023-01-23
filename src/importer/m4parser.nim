@@ -77,7 +77,7 @@ proc open*(self: var PpParser, filename: string,
        escape, skipInitialSpace)
 
 proc handleChar( val: var string, self: var PpParser, pos: var int): bool {.discardable.} =
-  echo "handle: ", repr(self.buf[pos])
+  # echo "handle: ", repr(self.buf[pos])
   case self.buf[pos]
   of '\r':
     pos = handleCR(self, pos)
@@ -117,9 +117,14 @@ proc parseLine(self: var PpParser): SourceLine =
       result = SourceLine(kind: m4Comment)
       result.comment.add "/*"
       pos.inc(2)
-      while self.buf[pos] != '*':
+      while true:
         echo "comment:got: ", repr(self.buf[pos])
-        if result.comment.handleChar(self, pos):
+        result.comment.handleChar(self, pos)
+        if self.buf[pos] == lexbase.EndOfFile:
+          break
+        elif self.buf[pos] == '*' and self.buf[pos+1] == '/':
+          result.comment.add "*/"
+          pos.inc(2)
           break
     elif self.buf[pos+1] == '/':
       echo "comment"
