@@ -89,36 +89,39 @@ proc handleChar( val: var string, self: var PpParser, pos: var int) =
 proc parseLine(self: var PpParser): SourceLine =
   var pos = self.bufpos
 
-  while true:
-    let c = self.buf[pos]
-    if c == lexbase.EndOfFile:
-      result = SourceLine(kind: m4Eof)
-    if c == '\0':
-      result = SourceLine(kind: m4Eof)
-      self.bufpos = pos # can continue after exception?
-      error(self, pos, " expected")
-      break
-    elif c == '/':
-      if self.buf[pos+1] == '*':
-        echo "star comment: "
-        result = SourceLine(kind: m4Comment)
-        result.comment.add "/*"
-        pos.inc(2)
-        while self.buf[pos] != '*':
-          result.comment.handleChar(self, pos)
-          inc(pos)
-      elif self.buf[pos+1] == '/':
-        echo "comment"
-        result = SourceLine(kind: m4Comment)
-        while self.buf[pos+1] != self.sep:
-          result.comment.add self.buf[pos+1]
-      else:
-        result.source.handleChar(self, pos)
-        break
-    else:
-      result = SourceLine(kind: m4Source)
+  let c = self.buf[pos]
+  echo "got: ", repr(c)
+  if c == lexbase.EndOfFile:
+    result = SourceLine(kind: m4Eof)
+  elif c == '\0':
+    echo "empty char: "
+    result = SourceLine(kind: m4Eof)
+    self.bufpos = pos # can continue after exception?
+    error(self, pos, " expected")
+  elif c == '/':
+    echo "maybe comment: "
+    if self.buf[pos+1] == '*':
+      echo "star comment: "
+      result = SourceLine(kind: m4Comment)
+      result.comment.add "/*"
+      pos.inc(2)
+      while self.buf[pos] != '*':
+        result.comment.handleChar(self, pos)
+        inc(pos)
+    elif self.buf[pos+1] == '/':
+      echo "comment"
+      result = SourceLine(kind: m4Comment)
       while self.buf[pos+1] != self.sep:
-        result.source.add self.buf[pos+1]
+        result.comment.add self.buf[pos+1]
+    else:
+      echo "not comment: ", self.buf[pos]
+      result.source.handleChar(self, pos)
+  else: # get line
+    echo "char: ", repr self.buf[pos]
+    result = SourceLine(kind: m4Source)
+    while self.buf[pos] != self.sep:
+      echo "char:curr: ", repr(self.buf[pos])
+      result.source.handleChar(self, pos)
   
   # while true:
   #   let c = self.buf[pos]
@@ -143,9 +146,9 @@ proc readLine*(self: var PpParser, columns = 0): bool =
     of '\l': self.bufpos = handleLF(self, self.bufpos)
     else: break
 
-  while true:
+  for i in 1..20:
     let res = parseLine(self)
-    echo "result: ", repr res
+    echo "result: ", self.bufpos, " :: ", repr res
 
   inc(self.currLine)
 
