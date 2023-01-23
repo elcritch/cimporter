@@ -160,14 +160,6 @@ proc readLine*(self: var PpParser, columns = 0): bool =
   ##
   ## Blank lines are skipped.
 
-  let oldpos = self.bufpos
-  # skip initial empty lines
-  while true:
-    case self.buf[self.bufpos]
-    of '\c': self.bufpos = handleCR(self, self.bufpos)
-    of '\l': self.bufpos = handleLF(self, self.bufpos)
-    else: break
-
   while true:
     let res = parseLine(self)
     echo "result: ", self.bufpos, " :: ", repr res
