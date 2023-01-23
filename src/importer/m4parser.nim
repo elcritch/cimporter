@@ -21,15 +21,6 @@ type
     of m4Eof:
       discard
 
-proc add(src: SourceLine, ch: char) =
-  match src:
-    m4Directive():
-      raiseAssert "can't add"
-    m4Source():
-      src.source.add ch
-    m4Comment():
-      src.source.add ch
-
 type
   PpLineDirective* = object
     lineNumber*: int
@@ -62,7 +53,7 @@ proc error(self: PpParser, pos: int, msg: string) =
   raiseEInvalidPp(self.filename, self.lineNumber, getColNumber(self, pos), msg)
 
 proc open*(self: var PpParser, input: Stream, filename: string,
-           separator = ',', escape = '\0',
+           separator = '\n', escape = '\0',
            skipInitialSpace = false) =
   ## Initializes the parser with an input stream. `Filename` is only used
   ## for nice error messages. The parser's behaviour can be controlled by
@@ -83,6 +74,18 @@ proc open*(self: var PpParser, filename: string,
   open(self, s, filename, separator,
        escape, skipInitialSpace)
 
+proc handleChar( val: var string, self: var PpParser, pos: var int) =
+  case self.buf[pos]
+  of '\r':
+    pos = handleCR(self, pos)
+    val.add "\n"
+  of '\n':
+    pos = handleLF(self, pos)
+    val.add "\n"
+  else:
+    val.add self.buf[pos]
+    inc(pos)
+
 proc parseLine(self: var PpParser): SourceLine =
   var pos = self.bufpos
 
@@ -99,28 +102,23 @@ proc parseLine(self: var PpParser): SourceLine =
       if self.buf[pos+1] == '*':
         echo "star comment: "
         result = SourceLine(kind: m4Comment)
-        while self.buf[pos+1] != '*':
-          result.comment.add self.buf[pos+1]
+        result.comment.add "/*"
+        pos.inc(2)
+        while self.buf[pos] != '*':
+          result.comment.handleChar(self, pos)
+          inc(pos)
       elif self.buf[pos+1] == '/':
         echo "comment"
         result = SourceLine(kind: m4Comment)
         while self.buf[pos+1] != self.sep:
           result.comment.add self.buf[pos+1]
       else:
-        inc(pos)
-        result.add self.buf[pos]
+        result.source.handleChar(self, pos)
         break
     else:
-      case c
-      of '\c':
-        pos = handleCR(self, pos)
-        val.add "\n"
-      of '\l':
-        pos = handleLF(self, pos)
-        val.add "\n"
-      else:
-        val.add c
-        inc(pos)
+      result = SourceLine(kind: m4Source)
+      while self.buf[pos+1] != self.sep:
+        result.source.add self.buf[pos+1]
   
   # while true:
   #   let c = self.buf[pos]
@@ -145,24 +143,9 @@ proc readLine*(self: var PpParser, columns = 0): bool =
     of '\l': self.bufpos = handleLF(self, self.bufpos)
     else: break
 
-  while self.buf[self.bufpos] != '\0':
-    parseNext(self, self.line)
-    echo "self.line: ", self.line
-    echo "self.buf[self.bufpos]: ", int(self.buf[self.bufpos])
-    if self.buf[self.bufpos] == self.sep:
-      inc(self.bufpos)
-    else:
-      case self.buf[self.bufpos]
-      of '\c', '\l':
-        # skip empty lines:
-        while true:
-          case self.buf[self.bufpos]
-          of '\c': self.bufpos = handleCR(self, self.bufpos)
-          of '\l': self.bufpos = handleLF(self, self.bufpos)
-          else: break
-      of '\0': discard
-      else: error(self, self.bufpos, self.sep & " expected")
-      break
+  while true:
+    let res = parseLine(self)
+    echo "result: ", repr res
 
   inc(self.currLine)
 
