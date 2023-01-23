@@ -75,7 +75,7 @@ proc open*(self: var PpParser, filename: string,
        escape, skipInitialSpace)
 
 proc handleChar( val: var string, self: var PpParser, pos: var int): bool {.discardable.} =
-  inc(pos)
+  echo "handle: ", repr(self.buf[pos])
   case self.buf[pos]
   of '\r':
     pos = handleCR(self, pos)
@@ -86,9 +86,11 @@ proc handleChar( val: var string, self: var PpParser, pos: var int): bool {.disc
     val.add "\n"
     result = true
   of '\0':
+    val.add "\0"
     result = true
   else:
     val.add self.buf[pos]
+  inc(pos)
 
 proc parseLine(self: var PpParser): SourceLine =
   var pos = self.bufpos
@@ -113,19 +115,28 @@ proc parseLine(self: var PpParser): SourceLine =
         echo "comment:got: ", repr(self.buf[pos])
         if result.comment.handleChar(self, pos):
           break
-        inc(pos)
     elif self.buf[pos+1] == '/':
       echo "comment"
       result = SourceLine(kind: m4Comment)
-      while self.buf[pos+1] != self.sep:
+      while self.buf[pos] != self.sep:
         if result.comment.handleChar(self, pos):
           break
     else:
       echo "not comment: ", self.buf[pos]
       result.source.handleChar(self, pos)
+  elif c == '#': # get line
+    echo "dir: ", repr self.buf[pos]
+    result = SourceLine(kind: m4Directive)
+    while self.buf[pos] != self.sep:
+      # echo "char:curr: ", repr(self.buf[pos])
+      if self.buf[pos] == lexbase.EndOfFile:
+        break
+      if result.file.handleChar(self, pos):
+        break
   else: # get line
     echo "char: ", repr self.buf[pos]
     result = SourceLine(kind: m4Source)
+    inc(pos)
     while self.buf[pos] != self.sep:
       # echo "char:curr: ", repr(self.buf[pos])
       if self.buf[pos] == lexbase.EndOfFile:
@@ -133,12 +144,6 @@ proc parseLine(self: var PpParser): SourceLine =
       if result.source.handleChar(self, pos):
         break
   
-  # while true:
-  #   let c = self.buf[pos]
-  #   if c == '\n': break
-  #   if c in {'\c', '\l', '\0'}: break
-  #   val.add c
-  #   inc(pos)
   self.bufpos = pos
 
 proc readLine*(self: var PpParser, columns = 0): bool =
@@ -156,7 +161,7 @@ proc readLine*(self: var PpParser, columns = 0): bool =
     of '\l': self.bufpos = handleLF(self, self.bufpos)
     else: break
 
-  for i in 1..20:
+  for i in 1..6:
     let res = parseLine(self)
     echo "result: ", self.bufpos, " :: ", repr res
     echo ""
