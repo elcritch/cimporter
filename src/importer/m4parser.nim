@@ -4,8 +4,31 @@ import std/parseutils
 import strutils, lexbase, streams, tables
 import lexbase, streams
 
-const
-  EOF = '\0'
+import patty
+
+type
+  SourceLineKind {.pure.} = enum
+    m4Directive, m4Source, m4Comment, m4Eof
+  SourceLine = ref object
+    case kind: SourceLineKind
+    of m4Directive:
+      line: int
+      file: string
+    of m4Source:
+      source: string
+    of m4Comment:
+      comment: string
+    of m4Eof:
+      discard
+
+proc add(src: SourceLine, ch: char) =
+  match src:
+    m4Directive():
+      raiseAssert "can't add"
+    m4Source():
+      src.source.add ch
+    m4Comment():
+      src.source.add ch
 
 type
   PpLineDirective* = object
@@ -60,33 +83,33 @@ proc open*(self: var PpParser, filename: string,
   open(self, s, filename, separator,
        escape, skipInitialSpace)
 
-proc parseNext(self: var PpParser, val: var string) =
+proc parseLine(self: var PpParser): SourceLine =
   var pos = self.bufpos
 
-  val.setLen(0) # reuse memory
   while true:
     let c = self.buf[pos]
+    if c == lexbase.EndOfFile:
+      result = SourceLine(kind: m4Eof)
     if c == '\0':
+      result = SourceLine(kind: m4Eof)
       self.bufpos = pos # can continue after exception?
       error(self, pos, " expected")
       break
-    elif c in {'"', '\''}:
-      if self.buf[pos+1] in {'"', '\''}:
-        val.add(self.buf[pos+1])
-        inc(pos, 2)
-      else:
-        inc(pos)
-        break
     elif c == '/':
-      if self.esc == '\0' and self.buf[pos+1] in {'"', '\''}:
-        val.add(self.buf[pos+1])
-        inc(pos, 2)
+      if self.buf[pos+1] == '*':
+        echo "star comment: "
+        result = SourceLine(kind: m4Comment)
+        while self.buf[pos+1] != '*':
+          result.comment.add self.buf[pos+1]
+      elif self.buf[pos+1] == '/':
+        echo "comment"
+        result = SourceLine(kind: m4Comment)
+        while self.buf[pos+1] != self.sep:
+          result.comment.add self.buf[pos+1]
       else:
         inc(pos)
+        result.add self.buf[pos]
         break
-    elif c == '\\':
-      val.add self.buf[pos+1]
-      inc(pos, 2)
     else:
       case c
       of '\c':
