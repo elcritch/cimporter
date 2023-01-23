@@ -8,7 +8,7 @@ import patty
 
 type
   SourceLineKind {.pure.} = enum
-    m4Directive, m4Source, m4Comment, m4Eof
+    m4Directive, m4Source, m4Comment, m4NewLine, m4Eof
   SourceLine = ref object
     case kind: SourceLineKind
     of m4Directive:
@@ -18,6 +18,8 @@ type
       source: string
     of m4Comment:
       comment: string
+    of m4NewLine:
+      newline: string
     of m4Eof:
       discard
 
@@ -90,7 +92,7 @@ proc handleChar( val: var string, self: var PpParser, pos: var int): bool {.disc
     result = true
   else:
     val.add self.buf[pos]
-  inc(pos)
+    inc(pos)
 
 proc parseLine(self: var PpParser): SourceLine =
   var pos = self.bufpos
@@ -104,6 +106,10 @@ proc parseLine(self: var PpParser): SourceLine =
     result = SourceLine(kind: m4Eof)
     self.bufpos = pos # can continue after exception?
     error(self, pos, " expected")
+  elif c in lexbase.NewLines:
+    echo "newline char: "
+    result = SourceLine(kind: m4NewLine, newline: "\n")
+    result.newline.handleChar(self, pos)
   elif c == '/':
     echo "maybe comment: "
     if self.buf[pos+1] == '*':
@@ -118,7 +124,7 @@ proc parseLine(self: var PpParser): SourceLine =
     elif self.buf[pos+1] == '/':
       echo "comment"
       result = SourceLine(kind: m4Comment)
-      while self.buf[pos] != self.sep:
+      while true:
         if result.comment.handleChar(self, pos):
           break
     else:
@@ -127,10 +133,8 @@ proc parseLine(self: var PpParser): SourceLine =
   elif c == '#': # get line
     echo "dir: ", repr self.buf[pos]
     result = SourceLine(kind: m4Directive)
-    while self.buf[pos] != self.sep:
+    while true:
       # echo "char:curr: ", repr(self.buf[pos])
-      if self.buf[pos] == lexbase.EndOfFile:
-        break
       if result.file.handleChar(self, pos):
         break
   else: # get line
@@ -139,8 +143,6 @@ proc parseLine(self: var PpParser): SourceLine =
     inc(pos)
     while self.buf[pos] != self.sep:
       # echo "char:curr: ", repr(self.buf[pos])
-      if self.buf[pos] == lexbase.EndOfFile:
-        break
       if result.source.handleChar(self, pos):
         break
   
