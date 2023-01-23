@@ -168,10 +168,12 @@ proc readLine*(self: var PpParser, columns = 0): bool =
     of '\l': self.bufpos = handleLF(self, self.bufpos)
     else: break
 
-  for i in 1..10:
+  while true:
     let res = parseLine(self)
     echo "result: ", self.bufpos, " :: ", repr res
     echo ""
+    if res.kind == m4Eof:
+      break
 
   inc(self.currLine)
 
