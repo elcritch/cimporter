@@ -4,6 +4,9 @@ import std/parseutils
 import strutils, lexbase, streams, tables
 import lexbase, streams
 
+const
+  EOF = '\0'
+
 type
   PpLineDirective* = object
     lineNumber*: int
@@ -14,9 +17,9 @@ type
     line*: string
     directive*: PpLineDirective
     filename: string
-    sep, quote, esc: char
+    sep, esc: char
     skipWhite: bool
-    currRow: int
+    currLine: int
     headers*: seq[string]
 
   PpError* = object of IOError ## An exception that is raised if
@@ -36,7 +39,7 @@ proc error(self: PpParser, pos: int, msg: string) =
   raiseEInvalidPp(self.filename, self.lineNumber, getColNumber(self, pos), msg)
 
 proc open*(self: var PpParser, input: Stream, filename: string,
-           separator = ',', quote = '"', escape = '\0',
+           separator = ',', escape = '\0',
            skipInitialSpace = false) =
   ## Initializes the parser with an input stream. `Filename` is only used
   ## for nice error messages. The parser's behaviour can be controlled by
@@ -44,67 +47,64 @@ proc open*(self: var PpParser, input: Stream, filename: string,
   lexbase.open(self, input)
   self.filename = filename
   self.sep = separator
-  self.quote = quote
   self.esc = escape
   self.skipWhite = skipInitialSpace
 
 proc open*(self: var PpParser, filename: string,
-           separator = ',', quote = '"', escape = '\0',
+           separator = '\n', escape = '\0',
            skipInitialSpace = false) =
   ## Similar to the `other open proc<#open,PpParser,Stream,string,char,char,char>`_,
   ## but creates the file stream for you.
   var s = newFileStream(filename, fmRead)
   if s == nil: self.error(0, "cannot open: " & filename)
   open(self, s, filename, separator,
-       quote, escape, skipInitialSpace)
+       escape, skipInitialSpace)
 
 proc parseNext(self: var PpParser, val: var string) =
   var pos = self.bufpos
 
   val.setLen(0) # reuse memory
-  if self.buf[pos] == self.quote and self.quote != '\0':
-    inc(pos)
-    while true:
-      let c = self.buf[pos]
-      if c == '\0':
-        self.bufpos = pos # can continue after exception?
-        error(self, pos, self.quote & " expected")
-        break
-      elif c in {'"', '\''}:
-        if self.buf[pos+1] in {'"', '\''}:
-          val.add(self.buf[pos+1])
-          inc(pos, 2)
-        else:
-          inc(pos)
-          break
-      elif c == '/':
-        if self.esc == '\0' and self.buf[pos+1] in {'"', '\''}:
-          val.add(self.buf[pos+1])
-          inc(pos, 2)
-        else:
-          inc(pos)
-          break
-      elif c == '\\':
-        val.add self.buf[pos+1]
+  while true:
+    let c = self.buf[pos]
+    if c == '\0':
+      self.bufpos = pos # can continue after exception?
+      error(self, pos, " expected")
+      break
+    elif c in {'"', '\''}:
+      if self.buf[pos+1] in {'"', '\''}:
+        val.add(self.buf[pos+1])
         inc(pos, 2)
       else:
-        case c
-        of '\c':
-          pos = handleCR(self, pos)
-          val.add "\n"
-        of '\l':
-          pos = handleLF(self, pos)
-          val.add "\n"
-        else:
-          val.add c
-          inc(pos)
-  else:
-    while true:
-      let c = self.buf[pos]
-      # if c == self.sep: break
-      # if c in {'\c', '\l', '\0'}: break
-      val.add c
-      inc(pos)
+        inc(pos)
+        break
+    elif c == '/':
+      if self.esc == '\0' and self.buf[pos+1] in {'"', '\''}:
+        val.add(self.buf[pos+1])
+        inc(pos, 2)
+      else:
+        inc(pos)
+        break
+    elif c == '\\':
+      val.add self.buf[pos+1]
+      inc(pos, 2)
+    else:
+      case c
+      of '\c':
+        pos = handleCR(self, pos)
+        val.add "\n"
+      of '\l':
+        pos = handleLF(self, pos)
+        val.add "\n"
+      else:
+        val.add c
+        inc(pos)
+  
+  # while true:
+  #   let c = self.buf[pos]
+  #   if c == '\n': break
+  #   if c in {'\c', '\l', '\0'}: break
+  #   val.add c
+  #   inc(pos)
   self.bufpos = pos
 
 proc readLine*(self: var PpParser, columns = 0): bool =
@@ -114,9 +114,7 @@ proc readLine*(self: var PpParser, columns = 0): bool =
   ##
   ## Blank lines are skipped.
 
-  var col = 0 # current column
   let oldpos = self.bufpos
-
   # skip initial empty lines
   while true:
     case self.buf[self.bufpos]
@@ -125,12 +123,9 @@ proc readLine*(self: var PpParser, columns = 0): bool =
     else: break
 
   while self.buf[self.bufpos] != '\0':
-    let oldlen = self.line.len
-    if oldlen < col + 1:
-      setLen(self.line, col + 1)
-      self.line[col] = ""
     parseNext(self, self.line)
-    inc(col)
+    echo "self.line: ", self.line
+    echo "self.buf[self.bufpos]: ", int(self.buf[self.bufpos])
     if self.buf[self.bufpos] == self.sep:
       inc(self.bufpos)
     else:
@@ -146,12 +141,7 @@ proc readLine*(self: var PpParser, columns = 0): bool =
       else: error(self, self.bufpos, self.sep & " expected")
       break
 
-  setLen(self.line, col)
-  result = col > 0
-  if result and col != columns and columns > 0:
-    error(self, oldpos + 1, $columns & " columns expected, but found " &
-          $col & " columns")
-  inc(self.currRow)
+  inc(self.currLine)
 
 proc close*(self: var PpParser) {.inline.} =
   ## Closes the parser `self` and its associated input stream.
@@ -160,11 +150,12 @@ proc close*(self: var PpParser) {.inline.} =
 
 when not defined(testing) and isMainModule:
   import os
-  var s = newFileStream(paramStr(1), fmRead)
-  if s == nil: quit("cannot open the file" & paramStr(1))
+  let fl = "tests/ctests/simple.full.c"
+  var s = newFileStream(fl, fmRead)
+  if s == nil: quit("cannot open the file: " & fl)
 
   var x: PpParser
-  open(x, s, paramStr(1))
+  open(x, s, fl)
   while readLine(x):
     echo "new row: "
     echo ">>", x.line
