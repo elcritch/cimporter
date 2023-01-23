@@ -85,6 +85,8 @@ proc handleChar( val: var string, self: var PpParser, pos: var int): bool {.disc
     pos = handleLF(self, pos)
     val.add "\n"
     result = true
+  of '\0':
+    result = true
   else:
     val.add self.buf[pos]
 
@@ -108,13 +110,16 @@ proc parseLine(self: var PpParser): SourceLine =
       result.comment.add "/*"
       pos.inc(2)
       while self.buf[pos] != '*':
-        result.comment.handleChar(self, pos)
+        echo "comment:got: ", repr(self.buf[pos])
+        if result.comment.handleChar(self, pos):
+          break
         inc(pos)
     elif self.buf[pos+1] == '/':
       echo "comment"
       result = SourceLine(kind: m4Comment)
       while self.buf[pos+1] != self.sep:
-        result.comment.add self.buf[pos+1]
+        if result.comment.handleChar(self, pos):
+          break
     else:
       echo "not comment: ", self.buf[pos]
       result.source.handleChar(self, pos)
@@ -122,7 +127,7 @@ proc parseLine(self: var PpParser): SourceLine =
     echo "char: ", repr self.buf[pos]
     result = SourceLine(kind: m4Source)
     while self.buf[pos] != self.sep:
-      echo "char:curr: ", repr(self.buf[pos])
+      # echo "char:curr: ", repr(self.buf[pos])
       if self.buf[pos] == lexbase.EndOfFile:
         break
       if result.source.handleChar(self, pos):
@@ -154,6 +159,7 @@ proc readLine*(self: var PpParser, columns = 0): bool =
   for i in 1..20:
     let res = parseLine(self)
     echo "result: ", self.bufpos, " :: ", repr res
+    echo ""
 
   inc(self.currLine)
 
