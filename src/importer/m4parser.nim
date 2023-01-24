@@ -1,10 +1,25 @@
 import std/strutils
-import std/parseutils
 import std/pegs
-import strutils, lexbase, streams, tables
-import lexbase, streams
+import std/[lexbase, streams, tables]
+import std/[strutils, sequtils]
+import std/[lexbase, streams]
+import std/[os, osproc]
 
 import patty
+
+type
+  AbsFile* = string
+  AbsDir* = string
+  RelFile* = string
+
+type
+  CcPreprocOptions* = ref object
+    run: bool
+    cc: string
+    skipClean: bool
+    flags: seq[string]
+    extraFlags: seq[string]
+    includes: seq[string]
 
 type
   SourceLineKind {.pure.} = enum
@@ -200,20 +215,50 @@ proc close*(self: var PpParser) {.inline.} =
   ## Closes the parser `self` and its associated input stream.
   lexbase.close(self)
 
+proc stripheaders*(prefile, ppfile: string) =
+  var ss = newFileStream(prefile, fmRead)
+  if ss == nil: quit("cannot open the file: " & prefile)
 
-proc run*(path: string) =
-  let outpth = path & ".pp"
-  var ss = newFileStream(path, fmRead)
-  if ss == nil: quit("cannot open the file: " & path)
-
-  var output = open(outpth, fmWrite)
+  var output = open(ppfile, fmWrite)
   var parser: PpParser
-  parser.open(ss, path)
-  parser.process(path, output)
+  parser.open(ss, prefile)
+  parser.process(prefile, output)
   output.close()
   parser.close()
 
-# proc fun(myRequired: float, mynums: seq[int], foo=1) = discard
+proc ccpreprocess(infile: string,
+                  ppoptions: CcPreprocOptions
+                 ): AbsFile =
+  ## use C compiler to preprocess
+  var projectPath = ""
+  if infile.isAbsolute():
+    projectPath = getCurrentDir().AbsDir
+  let infile = infile.absolutePath()
+  # echo "gConfig: ", string gConfig.projectPath
+  let outfile = infile & ".pre"
+  let postfile = infile & ".pp"
+  var args = newSeq[string]()
+  args.add(ppoptions.flags)
+  args.add(ppoptions.extraFlags)
+  args.add([infile, "-o", outfile])
+  for pth in ppoptions.includes: args.add("-I" & pth)
+  let res = execCmdEx(ppoptions.cc & " " & args.mapIt(it.quoteShell()).join(" "),
+                         options={poUsePath, poStdErrToStdOut})
+  if res.exitCode != 0:
+    raise newException(ValueError, "[c2nim] Error running CC preprocessor: " & res.output)
+
+  stripheaders(outfile, postfile)
+
+  if not ppoptions.skipClean:
+    outfile.removeFile()
+  result = AbsFile postfile
+
+proc run(inputs: seq[string], cc = "cc"): AbsFile =
+  echo "run"
+  var pp = CcPreprocOptions()
+  pp.flags = @["-E", "-CC", "-dI", "-dD"]
+  for infile in inputs:
+    result = ccpreprocess(infile, pp)
 
 when isMainModule: # Preserve ability to `import api`/call from Nim
   import cligen
