@@ -7,14 +7,16 @@ type
   ImporterOpts* = object
     file: seq[string]
     compiler: string
-    preprocessFlag: string
-    extraFlag: seq[string]
+    ccExpandFlag: string
+    ccFlag: seq[string]
+    noDefaultFlags: bool
     `include`: seq[string]
 
 const dflOpts* = ImporterOpts(
     compiler: "cc",
-    preprocessFlag: "-E",
-    extraFlag: @["-CC","-dI","-dD"]
+    ccExpandFlag: "-E",
+    noDefaultFlags: false,
+    ccFlag: @["-CC","-dI","-dD"]
 )
 
 proc cp(a, b: string) =
@@ -127,25 +129,27 @@ proc run*() =
 proc runImports*(
     inputs: seq[string],
     compiler = "cc",
-    preprocessFlag = "-E",
-    extraFlag: seq[string],
+    ccExpandFlag = "-E",
+    ccFlag: seq[string],
     cinclude: seq[string],
 ) =
   echo "importing..."
-  # if extraFlag == @[]:
-  #   extraFlag = @["-CC","-dI","-dD"]
+  # if ccFlag == @[]:
+  #   ccFlag = @["-CC","-dI","-dD"]
   
-  echo "flags: ", preprocessFlag
-  echo "cc: ", extraFlag
-  echo "cc: ", extraFlag
+  echo "flags: ", ccExpandFlag
+  echo "cc: ", ccFlag
+  echo "cc: ", ccFlag
 
 when isMainModule: # Preserve ability to `import api`/call from Nim
   const
     Short = { "file": 'f',
-              "preprocessFlag": 'r',
-              "extraFlag": 'e',
+              "ccExpandFlag": 'r',
+              "ccFlag": 'e',
               "include": 'I' }.toTable()
   import cligen
   # dispatch(runImports, short = Short)
   var app = initFromCL(dflOpts, short = Short)
+  if app.noDefaultFlags:
+    app.ccFlag = app.ccFlag[dflOpts.ccFlag.len()..^1]
   echo "app: ", repr(app)
