@@ -201,19 +201,20 @@ proc close*(self: var PpParser) {.inline.} =
   lexbase.close(self)
 
 
-when not defined(testing) and isMainModule:
-  # let fl = "tests/ctests/simple.full.c"
-  let
-    # pth = "tests/ctests/basic.c"
-    pth = "tests/ctests/basic.full.c"
-    outpth = pth & ".pp"
-  var s = newFileStream(pth, fmRead)
-  if s == nil: quit("cannot open the file: " & pth)
+proc run*(path: string) =
+  let outpth = path & ".pp"
+  var ss = newFileStream(path, fmRead)
+  if ss == nil: quit("cannot open the file: " & path)
 
   var output = open(outpth, fmWrite)
-  var x: PpParser
-  open(x, s, pth)
-  process(x, "tests/ctests/basic.c", output)
+  var parser: PpParser
+  parser.open(ss, path)
+  parser.process(path, output)
   output.close()
+  parser.close()
 
-  close(x)
+# proc fun(myRequired: float, mynums: seq[int], foo=1) = discard
+
+when isMainModule: # Preserve ability to `import api`/call from Nim
+  import cligen
+  dispatch run
