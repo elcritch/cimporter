@@ -215,14 +215,14 @@ proc close*(self: var PpParser) {.inline.} =
   ## Closes the parser `self` and its associated input stream.
   lexbase.close(self)
 
-proc stripheaders*(prefile, ppfile: string) =
+proc stripheaders*(infile, prefile, ppfile: string) =
   var ss = newFileStream(prefile, fmRead)
   if ss == nil: quit("cannot open the file: " & prefile)
 
   var output = open(ppfile, fmWrite)
   var parser: PpParser
   parser.open(ss, prefile)
-  parser.process(prefile, output)
+  parser.process(infile, output)
   output.close()
   parser.close()
 
@@ -248,13 +248,17 @@ proc ccpreprocess(infile: string,
   if res.exitCode != 0:
     raise newException(ValueError, "[importer] Error running CC preprocessor: " & res.output)
 
-  stripheaders(outfile, postfile)
+  stripheaders(infile, outfile, postfile)
 
   if not ppoptions.skipClean:
     outfile.removeFile()
   result = AbsFile postfile
 
-proc run(inputs: seq[string], cc = "cc", flags = "-E -CC -dI -dD"): AbsFile =
+proc run(inputs: seq[string],
+          cc="cc",
+          flags="-E",
+          extraFlags="-CC -dI -dD",
+        ): AbsFile =
   echo "[importer] processing files: ", inputs
   var pp = CcPreprocOptions()
   pp.cc = cc
