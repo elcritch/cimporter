@@ -165,30 +165,34 @@ proc parseLine(self: var PpParser): SourceLine =
   
   self.bufpos = pos
 
-proc process*(self: var PpParser, output: File) =
+proc process*(self: var PpParser, pth: string, output: File) =
   ## Reads the next row; if `columns` > 0, it expects the row to have
   ## exactly this many columns. Returns false if the end of the file
   ## has been encountered else true.
   ##
   ## Blank lines are skipped.
 
+  echo "Processing: ", pth
+  var isOrigSource = false
   while true:
     let res = parseLine(self)
     # echo "result: ", self.bufpos, " :: ", repr res
-    # echo ""
 
     case res.kind: 
     of m4LineDirective:
-      # output.write(res.file)
-      discard
+      isOrigSource = res.file == pth
     of m4Directive:
-      output.write(res.rawdir)
+      if isOrigSource:
+        output.write(res.rawdir)
     of m4Source:
-      output.write(res.source)
+      if isOrigSource:
+        output.write(res.source)
     of m4Comment:
-      output.write(res.comment)
+      if isOrigSource:
+        output.write(res.comment)
     of m4NewLine:
-      output.write("\n")
+      if isOrigSource:
+        output.write("\n")
     of m4Eof:
       break
 
@@ -198,7 +202,6 @@ proc close*(self: var PpParser) {.inline.} =
 
 
 when not defined(testing) and isMainModule:
-  import os
   # let fl = "tests/ctests/simple.full.c"
   let
     # pth = "tests/ctests/basic.c"
@@ -210,7 +213,7 @@ when not defined(testing) and isMainModule:
   var output = open(outpth, fmWrite)
   var x: PpParser
   open(x, s, pth)
-  process(x, output)
+  process(x, "tests/ctests/basic.c", output)
   output.close()
 
   close(x)
