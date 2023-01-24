@@ -146,10 +146,10 @@ proc parseLine(self: var PpParser): SourceLine =
         break
     echo "directive: `", str, "`"
     if str =~ peg"""'#'\s {\d+}\s '"'{[^"]+}'"'\s+ ({\d+} \s+)* \s*""":
-      let line = matches[0]
-      let fl = matches[1]
-      echo("line dir: ", line, " ", fl)
-      result = SourceLine(kind: m4LineDirective, file: str)
+      let line = matches[0].parseInt()
+      let file = matches[1]
+      echo("line dir: ", line, " ", file)
+      result = SourceLine(kind: m4LineDirective, line: line, file: file)
     else:
       echo("other dir: ", str)
       result = SourceLine(kind: m4Directive, rawdir: str)
@@ -179,7 +179,8 @@ proc process*(self: var PpParser, output: File) =
 
     case res.kind: 
     of m4LineDirective:
-      output.write(res.file)
+      # output.write(res.file)
+      discard
     of m4Directive:
       output.write(res.rawdir)
     of m4Source:
