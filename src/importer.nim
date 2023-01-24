@@ -1,4 +1,21 @@
 import std/[os, sequtils, osproc, strutils, strformat, sets, json]
+import std/[tables]
+
+import importer/m4parser
+
+type
+  ImporterOpts* = object
+    inputs: seq[string]
+    compiler: string
+    preprocessFlag: string
+    extraFlag: seq[string]
+    cinclude: seq[string]
+
+const dflOpts* = ImporterOpts(
+    compiler: "cc",
+    preprocessFlag: "-E",
+    extraFlag: @["-CC","-dI","-dD"]
+)
 
 proc cp(a, b: string) =
   echo &"Copying: {a} to {b}"
@@ -107,28 +124,25 @@ proc run*() =
 
   echo "[Success]"
 
-import argparse
+proc runImports*(
+    inputs: seq[string],
+    compiler = "cc",
+    preprocessFlag = "-E",
+    extraFlag: seq[string],
+    cinclude: seq[string],
+) =
+  echo "importing..."
+  # if extraFlag == @[]:
+  #   extraFlag = @["-CC","-dI","-dD"]
+  
+  echo "flags: ", preprocessFlag
+  echo "cc: ", extraFlag
+  echo "cc: ", extraFlag
 
-var p = newParser:
-  flag("-a", "--apple")
-  flag("-b", help="Show a banana")
-  option("-o", "--output", help="Output to this file")
-  arg("name")
-  arg("others", nargs = -1)
-
-try:
-  var opts = p.parse(commandLineParams())
-  echo "opts: ", type p
-  echo "opts: ", repr opts
-  assert opts.apple == true
-  assert opts.b == false
-  assert opts.output == "foo"
-  assert opts.name == "hi"
-  assert opts.others == @[]
-except ShortCircuit as err:
-  if err.flag == "argparse_help":
-    echo err.help
-    quit(1)
-except UsageError:
-  stderr.writeLine getCurrentExceptionMsg()
-  quit(1)
+when isMainModule: # Preserve ability to `import api`/call from Nim
+  const
+    Short = { "preprocessFlag": 'e', "extraFlag": 'f', "cinclude": 'I' }.toTable()
+  import cligen
+  # dispatch(runImports, short = Short)
+  var app = initFromCL(dflOpts, short = Short)
+  echo "app: ", repr(app)

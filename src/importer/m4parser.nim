@@ -254,7 +254,8 @@ proc ccpreprocess(infile: string,
     outfile.removeFile()
   result = AbsFile postfile
 
-proc run(inputs: seq[string],
+proc run(
+  inputs: seq[string],
           cc="cc",
           flags="-E",
           extraFlags="-CC -dI -dD",
