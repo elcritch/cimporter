@@ -8,12 +8,14 @@ import patty
 
 type
   SourceLineKind {.pure.} = enum
-    m4Directive, m4Source, m4Comment, m4NewLine, m4Eof
+    m4LineDirective, m4Directive, m4Source, m4Comment, m4NewLine, m4Eof
   SourceLine = ref object
     case kind: SourceLineKind
-    of m4Directive:
+    of m4LineDirective:
       line: int
       file: string
+    of m4Directive:
+      rawdir: string
     of m4Source:
       source: string
     of m4Comment:
@@ -137,7 +139,7 @@ proc parseLine(self: var PpParser): SourceLine =
       result.source.handleChar(self, pos)
   elif c == '#': # get line
     echo "dir: ", repr self.buf[pos]
-    result = SourceLine(kind: m4Directive)
+    result = SourceLine(kind: m4LineDirective)
     while true:
       # echo "char:curr: ", repr(self.buf[pos])
       if result.file.handleChar(self, pos):
@@ -168,19 +170,16 @@ proc process*(self: var PpParser, output: File) =
       break
 
     case res.kind: 
+    of m4LineDirective:
+      output.write(res.file)
     of m4Directive:
-      # line: int
-      # file: string
       output.write(res.file)
     of m4Source:
-      # source: string
       output.write(res.source)
     of m4Comment:
-      # comment: string
       output.write(res.comment)
     of m4NewLine:
-      # newline: string
-      output.write(res.newline)
+      output.write("\n")
     of m4Eof:
       discard
 
