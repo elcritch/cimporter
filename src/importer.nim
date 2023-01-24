@@ -95,10 +95,7 @@ proc importproject(proj, dir: string, globs: openArray[string], outdir = "") =
   # move nim files
   for f in toSeq(walkFiles dir / proj / "*.nim"):
     mv f, outdir / f.extractFilename
-
-  # let fixupPath = outdir/fixup & ".nim"
-  # if not fileExists fixupPath:
-  #   writeFile fixupPath, ""
+  
 
 echo "PWD: ", getCurrentDir()
 
