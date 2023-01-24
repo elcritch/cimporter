@@ -1,13 +1,5 @@
 import std/[os, sequtils, osproc, strutils, strformat, sets, json]
 
-let
-  srcDir="./".absolutePath
-  nimDir="src/openvcv4/"
-
-# let c2nimStr = readFile("tests/imports.c2nim")
-let skips = readFile("tests/imports.skips").split("\n").mapIt(it.strip()).toHashSet()
-echo "SKIPS: ", skips
-
 proc cp(a, b: string) =
   echo &"Copying: {a} to {b}"
   copyFile(a, b)
@@ -60,7 +52,11 @@ proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
     raise newException(ValueError, "c2nim failed")
   echo "RESULT: ", res
 
-proc importproject(proj, dir: string, globs: openArray[string], outdir = "") =
+proc importproject(proj, dir: string,
+                    globs: openArray[string],
+                    skips: HashSet[string],
+                    nimDir: string,
+                    outdir = "") =
   let outdir = if outdir.len() == 0: nimDir/proj else: outdir
   createDir outdir
 
@@ -96,10 +92,41 @@ proc importproject(proj, dir: string, globs: openArray[string], outdir = "") =
   for f in toSeq(walkFiles dir / proj / "*.nim"):
     mv f, outdir / f.extractFilename
   
+proc run*() =
+  let
+    srcDir="./".absolutePath
+    nimDir="src/openvcv4/"
 
-echo "PWD: ", getCurrentDir()
+  # let c2nimStr = readFile("tests/imports.c2nim")
+  let skips = readFile("tests/imports.skips").split("\n").mapIt(it.strip()).toHashSet()
+  echo "SKIPS: ", skips
+  echo "PWD: ", getCurrentDir()
 
-importproject "opencv2", &"{srcDir}/include/", ["opencv2/*.hpp",]
-importproject "core", &"{srcDir}/modules/core/include/opencv2/", ["*.hpp",]
+  # importproject "opencv2", &"{srcDir}/include/", ["opencv2/*.hpp",]
+  # importproject "core", &"{srcDir}/modules/core/include/opencv2/", ["*.hpp",]
 
-echo "[Success]"
+  echo "[Success]"
+
+import argparse
+
+var p = newParser:
+  flag("-a", "--apple")
+  flag("-b", help="Show a banana")
+  option("-o", "--output", help="Output to this file")
+  arg("name")
+  arg("others", nargs = -1)
+
+try:
+  var opts = p.parse(@["--apple", "-o=foo", "hi"])
+  assert opts.apple == true
+  assert opts.b == false
+  assert opts.output == "foo"
+  assert opts.name == "hi"
+  assert opts.others == @[]
+except ShortCircuit as err:
+  if err.flag == "argparse_help":
+    echo err.help
+    quit(1)
+except UsageError:
+  stderr.writeLine getCurrentExceptionMsg()
+  quit(1)
