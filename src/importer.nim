@@ -5,11 +5,11 @@ import importer/m4parser
 
 type
   ImporterOpts* = object
-    inputs: seq[string]
+    file: seq[string]
     compiler: string
     preprocessFlag: string
     extraFlag: seq[string]
-    cinclude: seq[string]
+    `include`: seq[string]
 
 const dflOpts* = ImporterOpts(
     compiler: "cc",
@@ -141,7 +141,10 @@ proc runImports*(
 
 when isMainModule: # Preserve ability to `import api`/call from Nim
   const
-    Short = { "preprocessFlag": 'e', "extraFlag": 'f', "cinclude": 'I' }.toTable()
+    Short = { "file": 'f',
+              "preprocessFlag": 'r',
+              "extraFlag": 'e',
+              "include": 'I' }.toTable()
   import cligen
   # dispatch(runImports, short = Short)
   var app = initFromCL(dflOpts, short = Short)
