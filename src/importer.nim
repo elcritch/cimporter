@@ -117,7 +117,9 @@ var p = newParser:
   arg("others", nargs = -1)
 
 try:
-  var opts = p.parse(@["--apple", "-o=foo", "hi"])
+  var opts = p.parse(commandLineParams())
+  echo "opts: ", type p
+  echo "opts: ", repr opts
   assert opts.apple == true
   assert opts.b == false
   assert opts.output == "foo"
