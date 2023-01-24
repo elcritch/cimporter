@@ -243,7 +243,7 @@ proc ccpreprocess(infile: string,
   args.add([infile, "-o", outfile])
   for pth in ppoptions.includes: args.add("-I" & pth)
   let res = execCmdEx(ppoptions.cc & " " & args.mapIt(it.quoteShell()).join(" "),
-                         options={poUsePath, poStdErrToStdOut})
+                      options={poUsePath, poStdErrToStdOut})
   if res.exitCode != 0:
     raise newException(ValueError, "[c2nim] Error running CC preprocessor: " & res.output)
 
@@ -254,7 +254,7 @@ proc ccpreprocess(infile: string,
   result = AbsFile postfile
 
 proc run(inputs: seq[string], cc = "cc"): AbsFile =
-  echo "run"
+  echo "processing files: ", inputs
   var pp = CcPreprocOptions()
   pp.flags = @["-E", "-CC", "-dI", "-dD"]
   for infile in inputs:
