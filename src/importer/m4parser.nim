@@ -153,7 +153,7 @@ proc parseLine(self: var PpParser): SourceLine =
   
   self.bufpos = pos
 
-proc readLine*(self: var PpParser, columns = 0): bool =
+proc process*(self: var PpParser, output: File) =
   ## Reads the next row; if `columns` > 0, it expects the row to have
   ## exactly this many columns. Returns false if the end of the file
   ## has been encountered else true.
@@ -167,7 +167,22 @@ proc readLine*(self: var PpParser, columns = 0): bool =
     if res.kind == m4Eof:
       break
 
-  inc(self.currLine)
+    case res.kind: 
+    of m4Directive:
+      # line: int
+      # file: string
+      output.write(res.file)
+    of m4Source:
+      # source: string
+      output.write(res.source)
+    of m4Comment:
+      # comment: string
+      output.write(res.comment)
+    of m4NewLine:
+      # newline: string
+      output.write(res.newline)
+    of m4Eof:
+      discard
 
 proc close*(self: var PpParser) {.inline.} =
   ## Closes the parser `self` and its associated input stream.
@@ -176,13 +191,17 @@ proc close*(self: var PpParser) {.inline.} =
 
 when not defined(testing) and isMainModule:
   import os
-  let fl = "tests/ctests/simple.full.c"
-  var s = newFileStream(fl, fmRead)
-  if s == nil: quit("cannot open the file: " & fl)
+  # let fl = "tests/ctests/simple.full.c"
+  let
+    pth = "tests/ctests/basic.c"
+    outpth = pth & ".pp"
+  var s = newFileStream(pth, fmRead)
+  if s == nil: quit("cannot open the file: " & pth)
 
+  var output = open(outpth, fmWrite)
   var x: PpParser
-  open(x, s, fl)
-  while readLine(x):
-    echo "new row: "
-    echo ">>", x.line
+  open(x, s, pth)
+  process(x, output)
+  output.close()
+
   close(x)
