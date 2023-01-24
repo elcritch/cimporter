@@ -148,7 +148,7 @@ proc parseLine(self: var PpParser): SourceLine =
     if str =~ peg"""'#'\s {\d+}\s '"'{[^"]+}'"'\s+ ({\d+} \s+)* \s*""":
       let line = matches[0].parseInt()
       let file = matches[1]
-      echo("line dir: ", line, " ", file)
+      # echo("line dir: ", line, " ", file)
       result = SourceLine(kind: m4LineDirective, line: line, file: file)
     else:
       # echo("other dir: ", str)
