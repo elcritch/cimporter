@@ -1,6 +1,6 @@
 import std/strutils
 import std/parseutils
-
+import std/pegs
 import strutils, lexbase, streams, tables
 import lexbase, streams
 
@@ -144,8 +144,13 @@ proc parseLine(self: var PpParser): SourceLine =
       # echo "char:curr: ", repr(self.buf[pos])
       if str.handleChar(self, pos):
         break
-    echo "directive: ", str
-    result = SourceLine(kind: m4LineDirective)
+    echo "directive: `", str, "`"
+    if str =~ peg"""'#' \s {\d+} \s '"' {[^"]+} '"' \s* """:
+      echo("line dir: ", matches)
+      result = SourceLine(kind: m4LineDirective, file: str)
+    else:
+      echo("other dir: ", str)
+      result = SourceLine(kind: m4Directive, rawdir: str)
   else: # get line
     echo "char: ", repr self.buf[pos]
     result = SourceLine(kind: m4Source)
