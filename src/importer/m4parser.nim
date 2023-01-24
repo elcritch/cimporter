@@ -129,32 +129,32 @@ proc parseLine(self: var PpParser): SourceLine =
           pos.inc(2)
           break
     elif self.buf[pos+1] == '/':
-      echo "comment"
+      # echo "comment"
       result = SourceLine(kind: m4Comment)
       while true:
         if result.comment.handleChar(self, pos):
           break
     else:
-      echo "not comment: ", self.buf[pos]
+      # echo "not comment: ", self.buf[pos]
       result.source.handleChar(self, pos)
   elif c == '#': # get line
-    echo "dir: ", repr self.buf[pos]
+    # echo "dir: ", repr self.buf[pos]
     var str = ""
     while true:
       # echo "char:curr: ", repr(self.buf[pos])
       if str.handleChar(self, pos):
         break
-    echo "directive: `", str, "`"
+    # echo "directive: `", str, "`"
     if str =~ peg"""'#'\s {\d+}\s '"'{[^"]+}'"'\s+ ({\d+} \s+)* \s*""":
       let line = matches[0].parseInt()
       let file = matches[1]
       echo("line dir: ", line, " ", file)
       result = SourceLine(kind: m4LineDirective, line: line, file: file)
     else:
-      echo("other dir: ", str)
+      # echo("other dir: ", str)
       result = SourceLine(kind: m4Directive, rawdir: str)
   else: # get line
-    echo "char: ", repr self.buf[pos]
+    # echo "char: ", repr self.buf[pos]
     result = SourceLine(kind: m4Source)
     result.source.add(self.buf[pos])
     inc(pos)
@@ -174,8 +174,8 @@ proc process*(self: var PpParser, output: File) =
 
   while true:
     let res = parseLine(self)
-    echo "result: ", self.bufpos, " :: ", repr res
-    echo ""
+    # echo "result: ", self.bufpos, " :: ", repr res
+    # echo ""
 
     case res.kind: 
     of m4LineDirective:
@@ -201,7 +201,8 @@ when not defined(testing) and isMainModule:
   import os
   # let fl = "tests/ctests/simple.full.c"
   let
-    pth = "tests/ctests/basic.c"
+    # pth = "tests/ctests/basic.c"
+    pth = "tests/ctests/basic.full.c"
     outpth = pth & ".pp"
   var s = newFileStream(pth, fmRead)
   if s == nil: quit("cannot open the file: " & pth)
