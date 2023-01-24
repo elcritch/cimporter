@@ -242,10 +242,11 @@ proc ccpreprocess(infile: string,
   args.add(ppoptions.extraFlags)
   args.add([infile, "-o", outfile])
   for pth in ppoptions.includes: args.add("-I" & pth)
-  let res = execCmdEx(ppoptions.cc & " " & args.mapIt(it.quoteShell()).join(" "),
-                      options={poUsePath, poStdErrToStdOut})
+  let cmd = ppoptions.cc & " " & args.mapIt(it.quoteShell()).join(" ")
+  echo "cmd: ", cmd
+  let res = execCmdEx(cmd, options={poUsePath, poStdErrToStdOut})
   if res.exitCode != 0:
-    raise newException(ValueError, "[c2nim] Error running CC preprocessor: " & res.output)
+    raise newException(ValueError, "[importer] Error running CC preprocessor: " & res.output)
 
   stripheaders(outfile, postfile)
 
@@ -253,10 +254,11 @@ proc ccpreprocess(infile: string,
     outfile.removeFile()
   result = AbsFile postfile
 
-proc run(inputs: seq[string], cc = "cc"): AbsFile =
-  echo "processing files: ", inputs
+proc run(inputs: seq[string], cc = "cc", flags = "-E -CC -dI -dD"): AbsFile =
+  echo "[importer] processing files: ", inputs
   var pp = CcPreprocOptions()
-  pp.flags = @["-E", "-CC", "-dI", "-dD"]
+  pp.cc = cc
+  pp.flags = flags.split()
   for infile in inputs:
     result = ccpreprocess(infile, pp)
 
