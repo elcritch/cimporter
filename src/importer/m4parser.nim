@@ -139,14 +139,17 @@ proc parseLine(self: var PpParser): SourceLine =
       result.source.handleChar(self, pos)
   elif c == '#': # get line
     echo "dir: ", repr self.buf[pos]
-    result = SourceLine(kind: m4LineDirective)
+    var str = ""
     while true:
       # echo "char:curr: ", repr(self.buf[pos])
-      if result.file.handleChar(self, pos):
+      if str.handleChar(self, pos):
         break
+    echo "directive: ", str
+    result = SourceLine(kind: m4LineDirective)
   else: # get line
     echo "char: ", repr self.buf[pos]
     result = SourceLine(kind: m4Source)
+    result.source.add(self.buf[pos])
     inc(pos)
     while self.buf[pos] != self.sep:
       # echo "char:curr: ", repr(self.buf[pos])
@@ -166,14 +169,12 @@ proc process*(self: var PpParser, output: File) =
     let res = parseLine(self)
     echo "result: ", self.bufpos, " :: ", repr res
     echo ""
-    if res.kind == m4Eof:
-      break
 
     case res.kind: 
     of m4LineDirective:
       output.write(res.file)
     of m4Directive:
-      output.write(res.file)
+      output.write(res.rawdir)
     of m4Source:
       output.write(res.source)
     of m4Comment:
@@ -181,7 +182,7 @@ proc process*(self: var PpParser, output: File) =
     of m4NewLine:
       output.write("\n")
     of m4Eof:
-      discard
+      break
 
 proc close*(self: var PpParser) {.inline.} =
   ## Closes the parser `self` and its associated input stream.
