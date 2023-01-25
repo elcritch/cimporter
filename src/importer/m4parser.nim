@@ -228,7 +228,7 @@ proc stripheaders*(infile, prefile, ppfile: string) =
 
 proc ccpreprocess(infile: string,
                   ppoptions: CcPreprocOptions
-                 ): AbsFile =
+                  ): AbsFile =
   ## use C compiler to preprocess
   var projectPath = ""
   if infile.isAbsolute():
