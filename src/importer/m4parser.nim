@@ -237,13 +237,16 @@ proc ccpreprocess(infile: string,
   # echo "gConfig: ", string gConfig.projectPath
   let outfile = infile & ".pre"
   let postfile = infile & ".pp"
+
   var args = newSeq[string]()
   args.add(ppoptions.flags)
   args.add(ppoptions.extraFlags)
   args.add([infile, "-o", outfile])
+
   for pth in ppoptions.includes: args.add("-I" & pth)
   let cmd = ppoptions.cc & " " & args.mapIt(it.quoteShell()).join(" ")
   echo "cmd: ", cmd
+
   let res = execCmdEx(cmd, options={poUsePath, poStdErrToStdOut})
   if res.exitCode != 0:
     raise newException(ValueError, "[importer] Error running CC preprocessor: " & res.output)
