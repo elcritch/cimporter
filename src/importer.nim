@@ -63,8 +63,7 @@ proc mkC2NimCmd(proj, file: string,
     cfgFile = cfgC2nim
 
   let post: seq[string] = @["--debug"] # modify progs
-  let mangles = projMangles(proj) &
-        @[ fmt"--mangle:'rcutils/' {{\w+}}=../rcutils/$1" ] 
+  let mangles = projMangles(proj)
   let files = @[ &"--concat:all"] & pre & @[ $cfgFile, $file ]
 
   result = mkCmd("c2nim", post & mangles & files)
@@ -84,8 +83,9 @@ proc importproject(proj: string,
                     outdir = AbsFile("")) =
   let outdir = if outdir.len() == 0: nimDir/proj else: outdir
   createDir outdir
+  echo "SOURCES: ", sources
 
-  let c2nImports = "tests/imports.c2nim"
+  # let c2nImports = "tests"/"imports.c2nim"
   let c2nProj = (nimDir/proj).addFileExt(".proj.c2nim")
   if not fileExists c2nProj:
     # raise newException(ValueError, "missing file: "&c2nProj)
@@ -93,7 +93,8 @@ proc importproject(proj: string,
     fl.write("\n")
     fl.close()
   echo "PROJ CNIM: ", c2nProj
-  let c2n = @[c2nImports, c2nProj.absolutePath]
+  # let c2n = @[c2nImports, c2nProj.absolutePath]
+  let c2n = @[c2nProj.absolutePath]
 
   # run commands
   var cmds: seq[string]
@@ -127,18 +128,10 @@ proc runImports*(opts: var ImporterOpts) =
   let skips = toml.skips.toHashSet()
   for imp in toml.imports:
     echo "import: ", imp
-    importproject(imp.name, opts.proj,
+    importproject(imp.name, opts.proj / imp.sources,
                   imp.globs, skips,
                   imp.nimDir, imp.outdir)
 
-  # let paths = toSeq(walkDirs(cfg.srcDir / "*.proj.c2nim"))
-  # echo "paths: ", paths
-  # let c2nimStr = readFile("tests/imports.c2nim")
-
-  # let skips = cfg.srcDir / "imports.skips"
-  # let skips = readFile().  split("\n").mapIt(it.strip()).toHashSet()
-  
-  # echo "SKIPS: ", skips
   echo "PWD: ", getCurrentDir()
 
   # importproject "opencv2", &"{srcDir}/include/", ["opencv2/*.hpp",]
