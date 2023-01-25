@@ -2,6 +2,7 @@ import std/[os, sequtils, osproc, strutils, strformat, sets, json]
 import std/[tables]
 
 import importer/m4parser
+import toml_serialization
 
 type
   ImporterOpts* = object
@@ -12,6 +13,17 @@ type
     ccFlag: seq[string]
     noDefaultFlags: bool
     `include`: seq[string]
+
+  ImportConfig* = object
+    name: string
+    sources: string
+    globs: seq[string]
+    nimdir: string
+    outdir: string
+
+  ImporterConfig* = object
+    skips: seq[string]
+    imports: seq[ImportConfig]
 
 const dflOpts* = ImporterOpts(
     proj: "./",
@@ -104,14 +116,17 @@ proc importproject(proj, dir: string,
   for f in toSeq(walkFiles dir / proj / "*.nim"):
     mv f, outdir / f.extractFilename
   
-proc runImports*(cfg: var ImporterOpts) =
+proc runImports*(opts: var ImporterOpts) =
   echo "importing..."
-  cfg.proj = cfg.proj.absolutePath()
-  cfg.projName = cfg.proj.lastPathPart()
-  let cfgsPath = cfg.proj / "*.import.toml"
-  echo "cfgsPath: ", cfgsPath
-  let options = toSeq(walkFiles(cfgsPath))
-  echo "options: ", options
+  opts.proj = opts.proj.absolutePath()
+  if opts.projName == "":
+    opts.projName = opts.proj.lastPathPart()
+  let optsPath = opts.proj / opts.projName & ".import.toml"
+
+  var toml_value = Toml.loadFile(optsPath, ImporterConfig)
+  echo "toml_value: ", toml_value
+  echo "toml_value:skips: ", toml_value.skips
+
   # let paths = toSeq(walkDirs(cfg.srcDir / "*.proj.c2nim"))
   # echo "paths: ", paths
   # let c2nimStr = readFile("tests/imports.c2nim")
