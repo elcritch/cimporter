@@ -6,7 +6,7 @@ import toml_serialization
 
 type
   ImporterOpts* = object
-    proj: string
+    proj: AbsFile
     projName: string
     compiler: string
     ccExpandFlag: string
@@ -76,24 +76,22 @@ proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
     raise newException(ValueError, "c2nim failed")
   echo "RESULT: ", res
 
-proc importproject(proj, dir: string,
+proc importproject(proj: string,
+                    sources: AbsFile,
                     globs: openArray[string],
                     skips: HashSet[string],
-                    nimDir: string,
-                    outdir = "") =
+                    nimDir: AbsFile,
+                    outdir = AbsFile("")) =
   let outdir = if outdir.len() == 0: nimDir/proj else: outdir
   createDir outdir
 
   let c2nImports = "tests/imports.c2nim"
-  let c2nPre = dir / &"{proj}.pre.c2nim"
-  echo "C2N: ", c2nPre
-  # let fixup= "fix_" & proj.replace(os.DirSep,"_")
-  # let c2nimStrExtra = "\n#@\n" & fmt"import {fixup}" & "\n@#\n\n"
-  # let c2nimStrExtra = ""
-  # writeFile c2nPre, c2nimStr & c2nimStrExtra
   let c2nProj = (nimDir/proj).addFileExt(".proj.c2nim")
   if not fileExists c2nProj:
-    raise newException(ValueError, "missing file: "&c2nProj)
+    # raise newException(ValueError, "missing file: "&c2nProj)
+    let fl = open(c2nProj, fmWrite)
+    fl.write("\n")
+    fl.close()
   echo "PROJ CNIM: ", c2nProj
   let c2n = @[c2nImports, c2nProj.absolutePath]
 
@@ -101,31 +99,37 @@ proc importproject(proj, dir: string,
   var cmds: seq[string]
   var files: seq[string]
   for pat in globs:
-    let fileGlob = fmt"{dir}/{pat}"
+    let fileGlob = fmt"{sources}/{pat}"
     echo "file glob: ", fileGlob
     files.add toSeq(walkFiles(fileGlob))
   echo "found files: ", files
   for f in files:
-    if f.relativePath(&"{dir}") in skips:
+    if f.relativePath(&"{sources}") in skips:
       echo "SKIPPING: ", f
     else:
       cmds.add(mkC2NimCmd(proj, f, c2n, outdir))
   run(cmds)
 
   # move nim files
-  for f in toSeq(walkFiles dir / proj / "*.nim"):
+  for f in toSeq(walkFiles sources / proj / "*.nim"):
     mv f, outdir / f.extractFilename
   
 proc runImports*(opts: var ImporterOpts) =
   echo "importing..."
-  opts.proj = opts.proj.absolutePath()
+  opts.proj = opts.proj.absolutePath().AbsDir
   if opts.projName == "":
     opts.projName = opts.proj.lastPathPart()
   let optsPath = opts.proj / opts.projName & ".import.toml"
 
-  var toml_value = Toml.loadFile(optsPath, ImporterConfig)
-  echo "toml_value: ", toml_value
-  echo "toml_value:skips: ", toml_value.skips
+  var toml = Toml.loadFile(optsPath, ImporterConfig)
+  echo "toml_value: ", toml
+  echo "toml_value:skips: ", toml.skips
+  let skips = toml.skips.toHashSet()
+  for imp in toml.imports:
+    echo "import: ", imp
+    importproject(imp.name, opts.proj,
+                  imp.globs, skips,
+                  imp.nimDir, imp.outdir)
 
   # let paths = toSeq(walkDirs(cfg.srcDir / "*.proj.c2nim"))
   # echo "paths: ", paths
