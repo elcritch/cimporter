@@ -5,7 +5,7 @@ import importer/m4parser
 
 type
   ImporterOpts* = object
-    file: seq[string]
+    srcDir: string
     compiler: string
     ccExpandFlag: string
     ccFlag: seq[string]
@@ -102,14 +102,19 @@ proc importproject(proj, dir: string,
   for f in toSeq(walkFiles dir / proj / "*.nim"):
     mv f, outdir / f.extractFilename
   
-proc run*() =
-  let
-    srcDir="./".absolutePath
-    nimDir="src/openvcv4/"
+proc runImports*(cfg: ImporterOpts) =
+  echo "importing..."
 
+  let options = toSeq(walkDirs(cfg.srcDir / "*.importer.toml"))
+  echo "options: ", options
+  # let paths = toSeq(walkDirs(cfg.srcDir / "*.proj.c2nim"))
+  # echo "paths: ", paths
   # let c2nimStr = readFile("tests/imports.c2nim")
-  let skips = readFile("tests/imports.skips").split("\n").mapIt(it.strip()).toHashSet()
-  echo "SKIPS: ", skips
+
+  # let skips = cfg.srcDir / "imports.skips"
+  # let skips = readFile().  split("\n").mapIt(it.strip()).toHashSet()
+  
+  # echo "SKIPS: ", skips
   echo "PWD: ", getCurrentDir()
 
   # importproject "opencv2", &"{srcDir}/include/", ["opencv2/*.hpp",]
@@ -117,24 +122,9 @@ proc run*() =
 
   echo "[Success]"
 
-proc runImports*(
-    inputs: seq[string],
-    compiler = "cc",
-    ccExpandFlag = "-E",
-    ccFlag: seq[string],
-    cinclude: seq[string],
-) =
-  echo "importing..."
-  # if ccFlag == @[]:
-  #   ccFlag = @["-CC","-dI","-dD"]
-  
-  echo "flags: ", ccExpandFlag
-  echo "cc: ", ccFlag
-  echo "cc: ", ccFlag
-
 when isMainModule: # Preserve ability to `import api`/call from Nim
   const
-    Short = { "file": 'f',
+    Short = { "srcDir": 'p',
               "ccExpandFlag": 'r',
               "ccFlag": 'e',
               "include": 'I' }.toTable()
@@ -144,3 +134,4 @@ when isMainModule: # Preserve ability to `import api`/call from Nim
   if app.noDefaultFlags:
     app.ccFlag = app.ccFlag[dflOpts.ccFlag.len()..^1]
   echo "app: ", $(app)
+  app.runImports()
