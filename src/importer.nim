@@ -5,7 +5,8 @@ import importer/m4parser
 
 type
   ImporterOpts* = object
-    srcDir: string
+    proj: string
+    projName: string
     compiler: string
     ccExpandFlag: string
     ccFlag: seq[string]
@@ -13,6 +14,7 @@ type
     `include`: seq[string]
 
 const dflOpts* = ImporterOpts(
+    proj: "./",
     compiler: "cc",
     ccExpandFlag: "-E",
     noDefaultFlags: false,
@@ -102,10 +104,13 @@ proc importproject(proj, dir: string,
   for f in toSeq(walkFiles dir / proj / "*.nim"):
     mv f, outdir / f.extractFilename
   
-proc runImports*(cfg: ImporterOpts) =
+proc runImports*(cfg: var ImporterOpts) =
   echo "importing..."
-
-  let options = toSeq(walkDirs(cfg.srcDir / "*.importer.toml"))
+  cfg.proj = cfg.proj.absolutePath()
+  cfg.projName = cfg.proj.lastPathPart()
+  let cfgsPath = cfg.proj / "*.import.toml"
+  echo "cfgsPath: ", cfgsPath
+  let options = toSeq(walkFiles(cfgsPath))
   echo "options: ", options
   # let paths = toSeq(walkDirs(cfg.srcDir / "*.proj.c2nim"))
   # echo "paths: ", paths
@@ -124,7 +129,7 @@ proc runImports*(cfg: ImporterOpts) =
 
 when isMainModule: # Preserve ability to `import api`/call from Nim
   const
-    Short = { "srcDir": 'p',
+    Short = { "proj": 'p',
               "ccExpandFlag": 'r',
               "ccFlag": 'e',
               "include": 'I' }.toTable()
