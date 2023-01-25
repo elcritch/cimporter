@@ -3,6 +3,7 @@ import std/[tables]
 
 import importer/m4parser
 import toml_serialization
+import glob
 
 type
   ImporterOpts* = object
@@ -101,9 +102,12 @@ proc importproject(proj: string,
   var files: seq[string]
   for pat in globs:
     let fileGlob = fmt"{sources}/{pat}"
-    echo "file glob: ", fileGlob
-    files.add toSeq(walkFiles(fileGlob))
-  echo "found files: ", files
+    echo "File glob: ", fileGlob
+    let pattern = glob(fileGlob)
+    files.add toSeq(walkGlob(pattern))
+  echo "Found files: ", files
+  echo ""
+
   for f in files:
     if f.relativePath(&"{sources}") in skips:
       echo "SKIPPING: ", f

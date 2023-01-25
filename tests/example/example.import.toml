@@ -4,4 +4,4 @@ skips = ["badExample1.c", "badExample2.c"]
 [[imports]]
 name = "example"
 sources = "include"
-globs = ["*.h"]
+globs = ["**/*.h"]
