@@ -39,8 +39,9 @@ proc projMangles(proj: string): seq[string] =
     let pp = relativePath(p1, proj) & os.DirSep
     result.add fmt"--mangle:'{p1}' {{\w+}}={pp}$1"
   
-proc mkC2NimCmd(proj, file: string, pre: seq[string], outdir: string): string =
-
+proc mkC2NimCmd(proj, file: string,
+                pre: seq[string],
+                outdir: string): string =
   let cfgC2nim = outdir / $(file.extractFilename()).changeFileExt("c2nim")
   var cfgFile = ""
   if cfgC2nim.fileExists():
@@ -48,14 +49,15 @@ proc mkC2NimCmd(proj, file: string, pre: seq[string], outdir: string): string =
     cfgFile = cfgC2nim
 
   let post: seq[string] = @["--debug"] # modify progs
-  
-  let mangles = projMangles(proj) & @[ fmt"--mangle:'rcutils/' {{\w+}}=../rcutils/$1" ] 
+  let mangles = projMangles(proj) &
+        @[ fmt"--mangle:'rcutils/' {{\w+}}=../rcutils/$1" ] 
   let files = @[ &"--concat:all"] & pre & @[ $cfgFile, $file ]
 
   result = mkCmd("c2nim", post & mangles & files)
   
 proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
-  let res = execProcesses(cmds, options = flags + {poParentStreams, poStdErrToStdOut, poEchoCmd})
+  let res = execProcesses(cmds, options = flags +
+                {poParentStreams, poStdErrToStdOut, poEchoCmd})
   if res != 0:
     raise newException(ValueError, "c2nim failed")
   echo "RESULT: ", res
