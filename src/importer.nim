@@ -31,11 +31,12 @@ proc mkCmd(bin: string, args: openArray[string]): string =
     if arg.len() > 0:
       result &= " " & quoteShell(arg)
 
+
 proc projMangles(proj: string): seq[string] =
-  let pj = proj.split("/")
+  let pj = proj.split(os.DirSep)
   for i in 0..<pj.len():
-    let p1 = pj[0..i].join("/") & "/"
-    let pp = relativePath(p1, proj) & "/"
+    let p1 = pj[0..i].join($os.DirSep) & $os.DirSep
+    let pp = relativePath(p1, proj) & os.DirSep
     result.add fmt"--mangle:'{p1}' {{\w+}}={pp}$1"
   
 proc mkC2NimCmd(proj, file: string, pre: seq[string], outdir: string): string =
@@ -70,7 +71,7 @@ proc importproject(proj, dir: string,
   let c2nImports = "tests/imports.c2nim"
   let c2nPre = dir / &"{proj}.pre.c2nim"
   echo "C2N: ", c2nPre
-  # let fixup= "fix_" & proj.replace("/","_")
+  # let fixup= "fix_" & proj.replace(os.DirSep,"_")
   # let c2nimStrExtra = "\n#@\n" & fmt"import {fixup}" & "\n@#\n\n"
   # let c2nimStrExtra = ""
   # writeFile c2nPre, c2nimStr & c2nimStrExtra
