@@ -47,18 +47,6 @@ proc mkC2NimCmd(proj, file: string, pre: seq[string], outdir: string): string =
     cfgFile = cfgC2nim
 
   let post: seq[string] = @["--debug"] # modify progs
-            # # preprocessor
-            # &"--preprocess:/opt/homebrew/bin/gcc-12",
-            # &"--pp:flags=-E -CC -dI",
-            # &"-D:RCL_ALIGNAS(N)=__attribute__ ((align(8)))",
-            # &"-D:_Alignas(N)=__attribute__ ((align(8)))",
-            # &"-I:{srcDir}/rcl/rcl/include/",
-            # &"-I:{srcDir}/rcl/rcl_yaml_param_parser/include",
-            # &"-I:{srcDir}/rcutils/include/",
-            # &"-I:{srcDir}/rmw_fastrtps/rmw_fastrtps_cpp/include/",
-            # &"-I:{srcDir}/rmw/rmw/include/",
-            # &"-I:{srcDir}/rosidl/rosidl_runtime_c/include/",
-            # &"-I:{srcDir}/rosidl/rosidl_typesupport_interface/include/"]
   
   let mangles = projMangles(proj) & @[ fmt"--mangle:'rcutils/' {{\w+}}=../rcutils/$1" ] 
   let files = @[ &"--concat:all"] & pre & @[ $cfgFile, $file ]
@@ -152,4 +140,4 @@ when isMainModule: # Preserve ability to `import api`/call from Nim
   var app = initFromCL(dflOpts, short = Short)
   if app.noDefaultFlags:
     app.ccFlag = app.ccFlag[dflOpts.ccFlag.len()..^1]
-  echo "app: ", repr(app)
+  echo "app: ", $(app)

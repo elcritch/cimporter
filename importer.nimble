@@ -11,3 +11,5 @@ bin           = @["importer"]
 
 requires "nim >= 1.6"
 requires "c2nim >= 0.9.18"
+requires "cligen >= 1.5"
+requires "patty"
