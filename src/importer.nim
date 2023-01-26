@@ -19,7 +19,6 @@ type
     name: string
     sources: string
     globs: seq[string]
-    nimdir: string
     outdir: string
 
   ImporterConfig* = object
@@ -66,9 +65,10 @@ proc mkC2NimCmd(file: AbsFile,
     echo "CFGFILE: ", cfgC2nim
     cfgFile = cfgC2nim
 
-  echo "c2nim OUTFILE:outdir: ", cfg.outdir
   echo "c2nim OUTFILE:file: ", file
+  echo "c2nim OUTFILE:cfgC2nim: ", cfgC2nim
   echo "c2nim OUTFILE:out: ", file.relativePath(cfg.outdir)
+  echo "c2nim OUTFILE:relfile: ", relfile
   let post: seq[string] = @["--debug"] # modify progs
   let mangles = projMangles(cfg.name)
   let files = @[ &"--concat:all"] & pre &
@@ -89,7 +89,7 @@ proc importproject(cfg: ImportConfig, skips: HashSet[string]) =
   echo "IMPORTPROJECT: ", cfg
 
   # let c2nImports = "tests"/"imports.c2nim"
-  let c2nProj = (cfg.nimDir/cfg.name).addFileExt(".proj.c2nim")
+  let c2nProj = (cfg.outdir/cfg.name).addFileExt(".proj.c2nim")
   if not fileExists c2nProj:
     # raise newException(ValueError, "missing file: "&c2nProj)
     let fl = open(c2nProj, fmWrite)
@@ -135,7 +135,7 @@ proc runImports*(opts: var ImporterOpts) =
   for item in toml.imports:
     var imp = item
     echo "import: ", imp
-    imp.outdir =  if imp.outdir.len() == 0: imp.nimDir/opts.proj
+    imp.outdir =  if imp.outdir.len() == 0: opts.proj / "src"
                   else: imp.outdir
     imp.sources = opts.proj / imp.sources
     importproject(imp, skips)
