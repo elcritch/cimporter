@@ -15,6 +15,7 @@ type
     ccExpandFlag: string
     ccFlag: seq[string]
     includes: seq[string]
+    defines*: seq[string]
     skipClean: bool
     noDefaultFlags: bool
     `include`: seq[string]
@@ -24,6 +25,7 @@ type
     sources: string
     globs: seq[string]
     includes: seq[string]
+    defines*: seq[string]
     outdir: string
     skipProjMangle: bool
 
@@ -107,6 +109,8 @@ proc importproject(opts: ImporterOpts,
   ccopts.skipClean = opts.skipClean
   ccopts.includes.add opts.includes
   ccopts.includes.add cfg.includes
+  ccopts.defines.add opts.defines
+  ccopts.defines.add cfg.defines
 
   # Run pre-processor
   var ppFiles: seq[string]
