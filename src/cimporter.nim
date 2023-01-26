@@ -58,7 +58,8 @@ proc mkC2NimCmd(file: AbsFile,
                 ): string =
   let
     relfile = file.relativePath(cfg.sources)
-    tgtfile = cfg.outdir/relfile.changeFileExt("nim")
+    split = relfile.splitFile()
+    tgtfile = cfg.outdir / split.dir / split.name.changeFileExt("nim")
     tgtParentFile = tgtfile.parentDir()
     cfgC2nim = cfg.outdir/file.extractFilename().
                 changeFileExt("c2nim")
@@ -106,22 +107,19 @@ proc importproject(opts: ImporterOpts,
   ccopts.skipClean = opts.skipClean
 
   # Run pre-processor
-  var cmds: seq[string]
+  var ppFiles: seq[string]
   for f in files:
     if f.relativePath(&"{cfg.sources}") in skips:
       echo "SKIPPING: ", f
     else:
-      cmds.add ccpreprocess(f, ccopts)
+      ppFiles.add ccpreprocess(f, ccopts)
 
   # Run pre-processor
-  for f in files:
-    let f = f & ".pre"
-    if f.relativePath(&"{cfg.sources}") in skips:
-      echo "SKIPPING: ", f
-    else:
-      cmds.add(mkC2NimCmd(f, c2n, cfg))
+  var cmds: seq[string]
+  for pp in ppFiles:
+    cmds.add(mkC2NimCmd(pp, c2n, cfg))
   echo "C2NIM CMDS: ", cmds
-
+  run cmds
 
 
 
