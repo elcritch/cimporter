@@ -20,6 +20,7 @@ type
     sources: string
     globs: seq[string]
     outdir: string
+    skipProjMangle: bool
 
   ImporterConfig* = object
     skips: seq[string]
@@ -68,7 +69,8 @@ proc mkC2NimCmd(file: AbsFile,
 
   createDir(tgtParentFile)
   let post: seq[string] = @["--debug"] # modify progs
-  let mangles = projMangles(cfg.name)
+  let mangles = if cfg.skipProjMangle: @[""]
+                else: projMangles(cfg.name)
   let files = @[ &"--concat:all"] & pre &
               @[ $cfgFile, $file, "--out:" & tgtfile]
 
@@ -82,19 +84,11 @@ proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
   echo "RESULT: ", res
 
 proc importproject(cfg: ImportConfig, skips: HashSet[string]) =
-  # let outdir = if outdir.len() == 0: nimDir/proj else: outdir
   createDir cfg.outdir
-  # echo "IMPORTPROJECT: ", cfg
 
-  # let c2nImports = "tests"/"imports.c2nim"
-  let c2nProj = (cfg.outdir/cfg.name).addFileExt(".proj.c2nim")
+  let c2nProj = (cfg.outdir/cfg.name).addFileExt(".c2nim")
   if not fileExists c2nProj:
-    # raise newException(ValueError, "missing file: "&c2nProj)
-    let fl = open(c2nProj, fmWrite)
-    fl.write("\n")
-    fl.close()
-  # echo "PROJ CNIM: ", c2nProj
-  # let c2n = @[c2nImports, c2nProj.absolutePath]
+    let fl = open(c2nProj, fmWrite); fl.write("\n"); fl.close()
   let c2n = @[c2nProj.absolutePath]
 
   # run commands
@@ -102,11 +96,8 @@ proc importproject(cfg: ImportConfig, skips: HashSet[string]) =
   var files: seq[string]
   for pat in cfg.globs:
     let fileGlob = fmt"{cfg.sources}/{pat}"
-    # echo "File glob: ", fileGlob
-    let pattern = glob(fileGlob)
-    files.add toSeq(walkGlob(pattern))
+    files.add toSeq(walkGlob(glob(fileGlob)))
   echo "Found files: ", files
-  echo ""
 
   for f in files:
     if f.relativePath(&"{cfg.sources}") in skips:
@@ -115,10 +106,7 @@ proc importproject(cfg: ImportConfig, skips: HashSet[string]) =
       cmds.add(mkC2NimCmd(f, c2n, cfg))
   run(cmds)
 
-  # # move nim files
-  # for f in toSeq(walkFiles cfg.sources / cfg.name / "*.nim"):
-  #   mv f, cfg.outdir / f.extractFilename
-  
+
 proc runImports*(opts: var ImporterOpts) =
   echo "importing..."
   opts.proj = opts.proj.absolutePath().AbsDir
@@ -139,10 +127,6 @@ proc runImports*(opts: var ImporterOpts) =
     importproject(imp, skips)
 
   echo "PWD: ", getCurrentDir()
-
-  # importproject "opencv2", &"{srcDir}/include/", ["opencv2/*.hpp",]
-  # importproject "core", &"{srcDir}/modules/core/include/opencv2/", ["*.hpp",]
-
   echo "[Success]"
 
 when isMainModule: # Preserve ability to `import api`/call from Nim
