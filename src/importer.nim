@@ -54,21 +54,23 @@ proc projMangles(proj: string): seq[string] =
     let pp = relativePath(p1, proj) & os.DirSep
     result.add fmt"--mangle:'{p1}' {{\w+}}={pp}$1"
   
-proc mkC2NimCmd(proj: string,
-                file: AbsFile,
+proc mkC2NimCmd(file: AbsFile,
                 pre: seq[string],
-                outdir: AbsFile): string =
-  let cfgC2nim = outdir / $(file.extractFilename()).changeFileExt("c2nim")
+                cfg: ImportConfig,
+                ): string =
+  let relfile = file.relativePath(cfg.sources)
+  # echo "c2nim OUTFILE:srcrel: ", relfile
+  let cfgC2nim = cfg.outdir / $(file.extractFilename()).changeFileExt("c2nim")
   var cfgFile = ""
   if cfgC2nim.fileExists():
     echo "CFGFILE: ", cfgC2nim
     cfgFile = cfgC2nim
 
-  echo "c2nim OUTFILE:outdir: ", outdir
+  echo "c2nim OUTFILE:outdir: ", cfg.outdir
   echo "c2nim OUTFILE:file: ", file
-  echo "c2nim OUTFILE:out: ", file.relativePath(outdir)
+  echo "c2nim OUTFILE:out: ", file.relativePath(cfg.outdir)
   let post: seq[string] = @["--debug"] # modify progs
-  let mangles = projMangles(proj)
+  let mangles = projMangles(cfg.name)
   let files = @[ &"--concat:all"] & pre &
               @[ $cfgFile, $file, ]
 
@@ -81,18 +83,13 @@ proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
     raise newException(ValueError, "c2nim failed")
   echo "RESULT: ", res
 
-proc importproject(proj: string,
-                    sources: AbsFile,
-                    globs: openArray[string],
-                    skips: HashSet[string],
-                    nimDir: AbsFile,
-                    outdir = AbsFile("")) =
+proc importproject(cfg: ImportConfig, skips: HashSet[string]) =
   # let outdir = if outdir.len() == 0: nimDir/proj else: outdir
-  createDir outdir
-  echo "SOURCES: ", sources
+  createDir cfg.outdir
+  echo "IMPORTPROJECT: ", cfg
 
   # let c2nImports = "tests"/"imports.c2nim"
-  let c2nProj = (nimDir/proj).addFileExt(".proj.c2nim")
+  let c2nProj = (cfg.nimDir/cfg.name).addFileExt(".proj.c2nim")
   if not fileExists c2nProj:
     # raise newException(ValueError, "missing file: "&c2nProj)
     let fl = open(c2nProj, fmWrite)
@@ -105,8 +102,8 @@ proc importproject(proj: string,
   # run commands
   var cmds: seq[string]
   var files: seq[string]
-  for pat in globs:
-    let fileGlob = fmt"{sources}/{pat}"
+  for pat in cfg.globs:
+    let fileGlob = fmt"{cfg.sources}/{pat}"
     echo "File glob: ", fileGlob
     let pattern = glob(fileGlob)
     files.add toSeq(walkGlob(pattern))
@@ -114,15 +111,15 @@ proc importproject(proj: string,
   echo ""
 
   for f in files:
-    if f.relativePath(&"{sources}") in skips:
+    if f.relativePath(&"{cfg.sources}") in skips:
       echo "SKIPPING: ", f
     else:
-      cmds.add(mkC2NimCmd(proj, f, c2n, outdir))
+      cmds.add(mkC2NimCmd(f, c2n, cfg))
   run(cmds)
 
   # move nim files
-  for f in toSeq(walkFiles sources / proj / "*.nim"):
-    mv f, outdir / f.extractFilename
+  for f in toSeq(walkFiles cfg.sources / cfg.name / "*.nim"):
+    mv f, cfg.outdir / f.extractFilename
   
 proc runImports*(opts: var ImporterOpts) =
   echo "importing..."
@@ -135,14 +132,13 @@ proc runImports*(opts: var ImporterOpts) =
   echo "toml_value: ", toml
   echo "toml_value:skips: ", toml.skips
   let skips = toml.skips.toHashSet()
-  for imp in toml.imports:
+  for item in toml.imports:
+    var imp = item
     echo "import: ", imp
-    let outdir = if imp.outdir.len() == 0: imp.nimDir/opts.proj
+    imp.outdir =  if imp.outdir.len() == 0: imp.nimDir/opts.proj
                   else: imp.outdir
-    importproject(imp.name,
-                  opts.proj / imp.sources,
-                  imp.globs, skips,
-                  imp.nimDir, outdir)
+    imp.sources = opts.proj / imp.sources
+    importproject(imp, skips)
 
   echo "PWD: ", getCurrentDir()
 
