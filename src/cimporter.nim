@@ -1,7 +1,7 @@
 import std/[os, sequtils, osproc, strutils, strformat, sets, json]
 import std/[tables]
 
-import importer/m4parser
+import cimporter/m4parser
 import toml_serialization
 import glob
 

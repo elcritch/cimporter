@@ -1,4 +1,4 @@
-src/importer/m4parser
+src/cimporter/m4parser
 *.pp
-src/importer.out
-importer
+src/cimporter.out
+cimporter

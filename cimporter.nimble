@@ -5,7 +5,7 @@ author        = "Jaremy Creechley"
 description   = "Import C projects using c2nim"
 license       = "MIT"
 srcDir        = "src"
-bin           = @["importer"]
+bin           = @["cimporter"]
 
 # Dependencies
 
