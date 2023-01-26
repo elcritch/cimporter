@@ -105,6 +105,7 @@ proc importproject(opts: ImporterOpts,
   ccopts.flags.add opts.ccExpandFlag
   ccopts.extraFlags.add opts.ccFlag
   ccopts.skipClean = opts.skipClean
+  ccopts.includes = opts.includes & cfg.includes
 
   # Run pre-processor
   var ppFiles: seq[string]
@@ -118,7 +119,7 @@ proc importproject(opts: ImporterOpts,
   var cmds: seq[string]
   for pp in ppFiles:
     cmds.add(mkC2NimCmd(pp, c2n, cfg))
-  echo "C2NIM CMDS: ", cmds
+  # echo "C2NIM CMDS: ", cmds
   run cmds
 
 
