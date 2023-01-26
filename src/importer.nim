@@ -109,8 +109,8 @@ proc runImports*(opts: var ImporterOpts) =
   let optsPath = opts.proj / opts.projName & ".import.toml"
 
   var toml = Toml.loadFile(optsPath, ImporterConfig)
-  echo "toml_value: ", toml
-  echo "toml_value:skips: ", toml.skips
+  echo "config: ", toml
+  echo "config:skips: ", toml.skips
   let skips = toml.skips.toHashSet()
   for item in toml.imports:
     var imp = item
