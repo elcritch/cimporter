@@ -59,16 +59,14 @@ proc mkC2NimCmd(file: AbsFile,
     tgtParentFile = tgtfile.parentDir()
     cfgC2nim = cfg.outdir/file.extractFilename().
                 changeFileExt("c2nim")
-  var cfgFile = ""
-  if cfgC2nim.fileExists():
-    cfgFile = cfgC2nim
 
+  echo "PRE: ", pre
   createDir(tgtParentFile)
   let post: seq[string] = @["--debug"] # modify progs
   let mangles = if cfg.skipProjMangle: @[""]
                 else: projMangles(cfg.name)
   let files = @[ &"--concat:all"] & pre &
-              @[ $cfgFile, $file, "--out:" & tgtfile]
+              @[ $file, "--out:" & tgtfile]
 
   result = mkCmd("c2nim", post & mangles & files)
   
