@@ -102,13 +102,17 @@ proc importproject(cfg: ImportConfig, skips: HashSet[string]) =
 
 
 proc runImports*(opts: var ImporterOpts) =
-  echo "importing..."
-  opts.proj = opts.proj.absolutePath().AbsDir
+  echo "importing: ", opts.proj
+  if not opts.proj.endsWith(".cimport.toml"):
+    raise newException(Exception, "Project config must end with '.cimport.toml'")
+  let configPath = opts.proj
+  opts.proj = opts.proj.absolutePath().parentDir().AbsFile
   if opts.projName == "":
-    opts.projName = opts.proj.lastPathPart()
-  let optsPath = opts.proj / opts.projName & ".cimport.toml"
+    opts.projName = opts.proj.parentDir()
+  # let optsPath = opts.proj / opts.projName & ".cimport.toml"
 
-  var toml = Toml.loadFile(optsPath, ImporterConfig)
+  echo "configPath: ", configPath
+  var toml = Toml.loadFile(configPath, ImporterConfig)
   echo "config: ", toml
   echo "config:skips: ", toml.skips
   let skips = toml.skips.toHashSet()
