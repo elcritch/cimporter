@@ -53,9 +53,10 @@ proc mkC2NimCmd(file: AbsFile,
                 ): string =
   let
     relfile = file.relativePath(cfg.sources)
-    tgtfile = cfg.outdir / relfile.changeFileExt("nim")
+    tgtfile = cfg.outdir/relfile.changeFileExt("nim")
     tgtParentFile = tgtfile.parentDir()
-    cfgC2nim = cfg.outdir / $(file.extractFilename()).changeFileExt("c2nim")
+    cfgC2nim = cfg.outdir/file.extractFilename().
+                changeFileExt("c2nim")
   var cfgFile = ""
   if cfgC2nim.fileExists():
     cfgFile = cfgC2nim
