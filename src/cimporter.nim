@@ -105,7 +105,8 @@ proc importproject(opts: ImporterOpts,
   ccopts.flags.add opts.ccExpandFlag
   ccopts.extraFlags.add opts.ccFlag
   ccopts.skipClean = opts.skipClean
-  ccopts.includes = opts.includes & cfg.includes
+  ccopts.includes.add opts.includes
+  ccopts.includes.add cfg.includes
 
   # Run pre-processor
   var ppFiles: seq[string]
