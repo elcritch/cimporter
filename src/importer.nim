@@ -63,9 +63,12 @@ proc mkC2NimCmd(proj, file: string,
     echo "CFGFILE: ", cfgC2nim
     cfgFile = cfgC2nim
 
+  echo "c2nim OUTFILE:outdir: ", outdir
+  echo "c2nim OUTFILE:out: ", file.relativePath(outdir)
   let post: seq[string] = @["--debug"] # modify progs
   let mangles = projMangles(proj)
-  let files = @[ &"--concat:all"] & pre & @[ $cfgFile, $file ]
+  let files = @[ &"--concat:all"] & pre &
+              @[ $cfgFile, $file, ]
 
   result = mkCmd("c2nim", post & mangles & files)
   
@@ -82,7 +85,7 @@ proc importproject(proj: string,
                     skips: HashSet[string],
                     nimDir: AbsFile,
                     outdir = AbsFile("")) =
-  let outdir = if outdir.len() == 0: nimDir/proj else: outdir
+  # let outdir = if outdir.len() == 0: nimDir/proj else: outdir
   createDir outdir
   echo "SOURCES: ", sources
 
@@ -132,9 +135,12 @@ proc runImports*(opts: var ImporterOpts) =
   let skips = toml.skips.toHashSet()
   for imp in toml.imports:
     echo "import: ", imp
-    importproject(imp.name, opts.proj / imp.sources,
+    let outdir = if imp.outdir.len() == 0: imp.nimDir/opts.proj
+                  else: imp.outdir
+    importproject(imp.name,
+                  opts.proj / imp.sources,
                   imp.globs, skips,
-                  imp.nimDir, imp.outdir)
+                  imp.nimDir, outdir)
 
   echo "PWD: ", getCurrentDir()
 
