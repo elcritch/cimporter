@@ -86,7 +86,7 @@ proc importproject(opts: ImporterOpts, cfg: ImportConfig, skips: HashSet[string]
   if not fileExists c2nProj:
     let fl = open(c2nProj, fmWrite); fl.write("\n"); fl.close()
   var c2n = @[c2nProj.absolutePath]
-  if opts.projC2Nim == "": c2n.add(opts.projC2Nim)
+  if opts.projC2Nim != "": c2n.add(opts.projC2Nim)
 
   # run commands
   var cmds: seq[string]
