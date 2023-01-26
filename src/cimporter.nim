@@ -10,6 +10,7 @@ type
     proj: AbsFile
     projDir: AbsFile
     projName: string
+    projC2Nim: string
     compiler: string
     ccExpandFlag: string
     ccFlag: seq[string]
@@ -78,13 +79,14 @@ proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
     raise newException(ValueError, "c2nim failed")
   echo "RESULT: ", res
 
-proc importproject(cfg: ImportConfig, skips: HashSet[string]) =
+proc importproject(opts: ImporterOpts, cfg: ImportConfig, skips: HashSet[string]) =
   createDir cfg.outdir
 
   let c2nProj = (cfg.outdir/cfg.name).addFileExt(".c2nim")
   if not fileExists c2nProj:
     let fl = open(c2nProj, fmWrite); fl.write("\n"); fl.close()
-  let c2n = @[c2nProj.absolutePath]
+  var c2n = @[c2nProj.absolutePath]
+  if opts.projC2Nim == "": c2n.add(opts.projC2Nim)
 
   # run commands
   var cmds: seq[string]
@@ -108,11 +110,15 @@ proc runImports*(opts: var ImporterOpts) =
   if opts.projName == "":
     opts.projName = opts.proj.lastPathPart()
   let optsPath = opts.proj / opts.projName & ".cimport.toml"
-  echo "optsPath: ", optsPath 
+  if opts.projC2Nim == "":
+    opts.projC2Nim = opts.proj / opts.projName & ".c2nim"
+  if not opts.projC2Nim.fileExists():
+    opts.projC2Nim = ""
+  echo "Options Path: ", optsPath 
+  echo "C2Nim Path: ", opts.projC2Nim 
 
   var toml = Toml.loadFile(optsPath, ImporterConfig)
   echo "config: ", toml
-  echo "config:skips: ", toml.skips
   let skips = toml.skips.toHashSet()
   for item in toml.imports:
     var imp = item
@@ -120,7 +126,7 @@ proc runImports*(opts: var ImporterOpts) =
     imp.outdir =  if imp.outdir.len() == 0: opts.proj / "src"
                   else: imp.outdir
     imp.sources = opts.proj / imp.sources
-    importproject(imp, skips)
+    importproject(opts, imp, skips)
 
   echo "PWD: ", getCurrentDir()
   echo "[Success]"
