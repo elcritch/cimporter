@@ -106,7 +106,7 @@ proc runImports*(opts: var ImporterOpts) =
   opts.proj = opts.proj.absolutePath().AbsDir
   if opts.projName == "":
     opts.projName = opts.proj.lastPathPart()
-  let optsPath = opts.proj / opts.projName & ".import.toml"
+  let optsPath = opts.proj / opts.projName & ".cimport.toml"
 
   var toml = Toml.loadFile(optsPath, ImporterConfig)
   echo "config: ", toml
