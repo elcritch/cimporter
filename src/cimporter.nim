@@ -14,6 +14,8 @@ type
     compiler: string
     ccExpandFlag: string
     ccFlag: seq[string]
+    includes: seq[string]
+    skipClean: bool
     noDefaultFlags: bool
     `include`: seq[string]
 
@@ -21,6 +23,7 @@ type
     name: string
     sources: string
     globs: seq[string]
+    includes: seq[string]
     outdir: string
     skipProjMangle: bool
 
@@ -70,6 +73,7 @@ proc mkC2NimCmd(file: AbsFile,
 
   result = mkCmd("c2nim", post & mangles & files)
   
+
 proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
   let res = execProcesses(cmds, options = flags +
                 {poParentStreams, poStdErrToStdOut, poEchoCmd})
@@ -77,7 +81,9 @@ proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
     raise newException(ValueError, "c2nim failed")
   echo "RESULT: ", res
 
-proc importproject(opts: ImporterOpts, cfg: ImportConfig, skips: HashSet[string]) =
+proc importproject(opts: ImporterOpts,
+                    cfg: ImportConfig,
+                    skips: HashSet[string]) =
   createDir cfg.outdir
 
   let c2nProj = (cfg.outdir/cfg.name).addFileExt(".c2nim")
@@ -87,19 +93,36 @@ proc importproject(opts: ImporterOpts, cfg: ImportConfig, skips: HashSet[string]
   if opts.projC2Nim != "": c2n.insert(opts.projC2Nim, 0)
 
   # run commands
-  var cmds: seq[string]
   var files: seq[string]
   for pat in cfg.globs:
     let fileGlob = fmt"{cfg.sources}/{pat}"
     files.add toSeq(walkGlob(glob(fileGlob)))
   echo "Found files: ", files
 
+  var ccopts = CcPreprocOptions()
+  ccopts.cc = opts.compiler
+  ccopts.flags.add opts.ccExpandFlag
+  ccopts.extraFlags.add opts.ccFlag
+  ccopts.skipClean = opts.skipClean
+
+  # Run pre-processor
+  var cmds: seq[string]
   for f in files:
     if f.relativePath(&"{cfg.sources}") in skips:
       echo "SKIPPING: ", f
     else:
+      cmds.add ccpreprocess(f, ccopts)
+
+  # Run pre-processor
+  for f in files:
+    let f = f & ".pre"
+    if f.relativePath(&"{cfg.sources}") in skips:
+      echo "SKIPPING: ", f
+    else:
       cmds.add(mkC2NimCmd(f, c2n, cfg))
-  run(cmds)
+  echo "C2NIM CMDS: ", cmds
+
+
 
 
 proc runImports*(opts: var ImporterOpts) =

@@ -2,3 +2,4 @@ src/cimporter/m4parser
 *.pp
 src/cimporter.out
 cimporter
+*.pre
