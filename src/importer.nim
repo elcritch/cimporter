@@ -54,9 +54,10 @@ proc projMangles(proj: string): seq[string] =
     let pp = relativePath(p1, proj) & os.DirSep
     result.add fmt"--mangle:'{p1}' {{\w+}}={pp}$1"
   
-proc mkC2NimCmd(proj, file: string,
+proc mkC2NimCmd(proj: string,
+                file: AbsFile,
                 pre: seq[string],
-                outdir: string): string =
+                outdir: AbsFile): string =
   let cfgC2nim = outdir / $(file.extractFilename()).changeFileExt("c2nim")
   var cfgFile = ""
   if cfgC2nim.fileExists():
@@ -64,6 +65,7 @@ proc mkC2NimCmd(proj, file: string,
     cfgFile = cfgC2nim
 
   echo "c2nim OUTFILE:outdir: ", outdir
+  echo "c2nim OUTFILE:file: ", file
   echo "c2nim OUTFILE:out: ", file.relativePath(outdir)
   let post: seq[string] = @["--debug"] # modify progs
   let mangles = projMangles(proj)
