@@ -17,6 +17,7 @@ type
     includes: seq[string]
     defines*: seq[string]
     skipClean: bool
+    skipPreprocess: bool
     noDefaultFlags: bool
     `include`: seq[string]
 
@@ -117,6 +118,8 @@ proc importproject(opts: ImporterOpts,
   for f in files:
     if f.relativePath(&"{cfg.sources}") in skips:
       echo "SKIPPING: ", f
+    elif opts.skipPreprocess:
+      ppFiles.add(f & ".pp")
     else:
       ppFiles.add ccpreprocess(f, ccopts)
 
