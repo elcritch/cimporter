@@ -57,9 +57,11 @@ proc mkC2NimCmd(file: AbsFile,
                 pre: seq[string],
                 cfg: ImportConfig,
                 ): string =
-  let relfile = file.relativePath(cfg.sources)
-  # echo "c2nim OUTFILE:srcrel: ", relfile
-  let cfgC2nim = cfg.outdir / $(file.extractFilename()).changeFileExt("c2nim")
+  let
+    relfile = file.relativePath(cfg.sources)
+    tgtfile = cfg.outdir / relfile.changeFileExt("nim")
+    tgtParentFile = tgtfile.parentDir()
+    cfgC2nim = cfg.outdir / $(file.extractFilename()).changeFileExt("c2nim")
   var cfgFile = ""
   if cfgC2nim.fileExists():
     echo "CFGFILE: ", cfgC2nim
@@ -68,11 +70,13 @@ proc mkC2NimCmd(file: AbsFile,
   echo "c2nim OUTFILE:file: ", file
   echo "c2nim OUTFILE:cfgC2nim: ", cfgC2nim
   echo "c2nim OUTFILE:out: ", file.relativePath(cfg.outdir)
-  echo "c2nim OUTFILE:relfile: ", relfile
+  echo "c2nim OUTFILE:tgtfile: ", tgtfile
+  echo "c2nim OUTFILE:tgtParentFile: ", tgtParentFile
+  createDir(tgtParentFile)
   let post: seq[string] = @["--debug"] # modify progs
   let mangles = projMangles(cfg.name)
   let files = @[ &"--concat:all"] & pre &
-              @[ $cfgFile, $file, ]
+              @[ $cfgFile, $file, "--out:" & tgtfile]
 
   result = mkCmd("c2nim", post & mangles & files)
   
