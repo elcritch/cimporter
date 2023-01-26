@@ -115,9 +115,9 @@ proc importproject(cfg: ImportConfig, skips: HashSet[string]) =
       cmds.add(mkC2NimCmd(f, c2n, cfg))
   run(cmds)
 
-  # move nim files
-  for f in toSeq(walkFiles cfg.sources / cfg.name / "*.nim"):
-    mv f, cfg.outdir / f.extractFilename
+  # # move nim files
+  # for f in toSeq(walkFiles cfg.sources / cfg.name / "*.nim"):
+  #   mv f, cfg.outdir / f.extractFilename
   
 proc runImports*(opts: var ImporterOpts) =
   echo "importing..."
