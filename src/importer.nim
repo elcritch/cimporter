@@ -34,18 +34,11 @@ const dflOpts* = ImporterOpts(
     ccFlag: @["-CC","-dI","-dD"]
 )
 
-proc cp(a, b: string) =
-  echo &"Copying: {a} to {b}"
-  copyFile(a, b)
-proc mv(a, b: string) =
-  echo &"Moving: {a} to {b}"
-  moveFile(a, b)
 proc mkCmd(bin: string, args: openArray[string]): string =
   result = bin
   for arg in args:
     if arg.len() > 0:
       result &= " " & quoteShell(arg)
-
 
 proc projMangles(proj: string): seq[string] =
   let pj = proj.split(os.DirSep)
@@ -53,7 +46,7 @@ proc projMangles(proj: string): seq[string] =
     let p1 = pj[0..i].join($os.DirSep) & $os.DirSep
     let pp = relativePath(p1, proj) & os.DirSep
     result.add fmt"--mangle:'{p1}' {{\w+}}={pp}$1"
-  
+
 proc mkC2NimCmd(file: AbsFile,
                 pre: seq[string],
                 cfg: ImportConfig,
