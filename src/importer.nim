@@ -64,14 +64,8 @@ proc mkC2NimCmd(file: AbsFile,
     cfgC2nim = cfg.outdir / $(file.extractFilename()).changeFileExt("c2nim")
   var cfgFile = ""
   if cfgC2nim.fileExists():
-    echo "CFGFILE: ", cfgC2nim
     cfgFile = cfgC2nim
 
-  echo "c2nim OUTFILE:file: ", file
-  echo "c2nim OUTFILE:cfgC2nim: ", cfgC2nim
-  echo "c2nim OUTFILE:out: ", file.relativePath(cfg.outdir)
-  echo "c2nim OUTFILE:tgtfile: ", tgtfile
-  echo "c2nim OUTFILE:tgtParentFile: ", tgtParentFile
   createDir(tgtParentFile)
   let post: seq[string] = @["--debug"] # modify progs
   let mangles = projMangles(cfg.name)
@@ -90,7 +84,7 @@ proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
 proc importproject(cfg: ImportConfig, skips: HashSet[string]) =
   # let outdir = if outdir.len() == 0: nimDir/proj else: outdir
   createDir cfg.outdir
-  echo "IMPORTPROJECT: ", cfg
+  # echo "IMPORTPROJECT: ", cfg
 
   # let c2nImports = "tests"/"imports.c2nim"
   let c2nProj = (cfg.outdir/cfg.name).addFileExt(".proj.c2nim")
@@ -99,7 +93,7 @@ proc importproject(cfg: ImportConfig, skips: HashSet[string]) =
     let fl = open(c2nProj, fmWrite)
     fl.write("\n")
     fl.close()
-  echo "PROJ CNIM: ", c2nProj
+  # echo "PROJ CNIM: ", c2nProj
   # let c2n = @[c2nImports, c2nProj.absolutePath]
   let c2n = @[c2nProj.absolutePath]
 
@@ -108,7 +102,7 @@ proc importproject(cfg: ImportConfig, skips: HashSet[string]) =
   var files: seq[string]
   for pat in cfg.globs:
     let fileGlob = fmt"{cfg.sources}/{pat}"
-    echo "File glob: ", fileGlob
+    # echo "File glob: ", fileGlob
     let pattern = glob(fileGlob)
     files.add toSeq(walkGlob(pattern))
   echo "Found files: ", files
