@@ -21,7 +21,7 @@ type
     noDefaultFlags: bool
     `include`: seq[string]
 
-  ImportPegs* = object
+  ImportReplaces* = object
     file*: Peg
     peg*: Peg
     by*: string
@@ -38,7 +38,7 @@ type
   ImporterConfig* = object
     skips: seq[string]
     imports: seq[ImportConfig]
-    srcmods*: seq[ImportPegs]
+    replace*: seq[ImportReplaces]
 
 const dflOpts* = ImporterOpts(
     proj: "./",
@@ -98,7 +98,9 @@ proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
 
 proc importproject(opts: ImporterOpts,
                     cfg: ImportConfig,
-                    skips: HashSet[string]) =
+                    skips: HashSet[string],
+                    subs: seq[ImportReplaces]
+                    ) =
   createDir cfg.outdir
 
   let c2nProj = (cfg.outdir/cfg.name).addFileExt(".c2nim")
@@ -132,8 +134,8 @@ proc importproject(opts: ImporterOpts,
     elif opts.skipPreprocess:
       ppFiles.add(f & ".pp")
     else:
-      # opts.srcmods.anyIt(it.file)
-      ppFiles.add ccpreprocess(f, ccopts)
+      let reps = subs.filterIt(f.endsWith(it.file)).mapIt((it.peg, it.by))
+      ppFiles.add ccpreprocess(f, ccopts, reps)
 
   # Run pre-processor
   var cmds: seq[string]
@@ -166,7 +168,7 @@ proc runImports*(opts: var ImporterOpts) =
     imp.outdir =  if imp.outdir.len() == 0: opts.proj / "src"
                   else: imp.outdir
     imp.sources = opts.proj / imp.sources
-    importproject(opts, imp, skips)
+    importproject(opts, imp, skips, toml.replace)
 
   echo "PWD: ", getCurrentDir()
   echo "[Success]"
