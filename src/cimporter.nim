@@ -51,7 +51,8 @@ const dflOpts* = ImporterOpts(
 proc readValue*(r: var TomlReader, value: var Peg) =
   let s = r.parseAsString()
   try: value = peg(s)
-  except: discard
+  except:
+    echo "Error parsing peg: ", s
 
 proc mkCmd(bin: string, args: openArray[string]): string =
   result = bin
