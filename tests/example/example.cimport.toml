@@ -5,3 +5,8 @@ skips = ["badExample1.c", "badExample2.c"]
 name = "example"
 sources = "../example_includes"
 globs = ["**/*.h"]
+
+[[mods]]
+file = "example.h"
+peg = "'int unix = 0'"
+by = "int unix = 2"

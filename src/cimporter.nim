@@ -21,6 +21,11 @@ type
     noDefaultFlags: bool
     `include`: seq[string]
 
+  ImportPegs* = object
+    file*: string
+    peg*: string
+    by*: string
+
   ImportConfig* = object
     name: string
     sources: string
@@ -33,6 +38,7 @@ type
   ImporterConfig* = object
     skips: seq[string]
     imports: seq[ImportConfig]
+    mods*: seq[ImportPegs]
 
 const dflOpts* = ImporterOpts(
     proj: "./",
