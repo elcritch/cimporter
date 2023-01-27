@@ -1,5 +1,5 @@
 import std/[os, sequtils, osproc, strutils, strformat, sets, json]
-import std/[tables]
+import std/[tables, pegs]
 
 import cimporter/m4parser
 import toml_serialization
@@ -22,8 +22,8 @@ type
     `include`: seq[string]
 
   ImportPegs* = object
-    file*: string
-    peg*: string
+    file*: Peg
+    peg*: Peg
     by*: string
 
   ImportConfig* = object
@@ -38,7 +38,7 @@ type
   ImporterConfig* = object
     skips: seq[string]
     imports: seq[ImportConfig]
-    mods*: seq[ImportPegs]
+    srcmods*: seq[ImportPegs]
 
 const dflOpts* = ImporterOpts(
     proj: "./",
@@ -47,6 +47,11 @@ const dflOpts* = ImporterOpts(
     noDefaultFlags: false,
     ccFlag: @["-CC","-dI","-dD"]
 )
+
+proc readValue*(r: var TomlReader, value: var Peg) =
+  let s = r.parseAsString()
+  try: value = peg(s)
+  except: discard
 
 proc mkCmd(bin: string, args: openArray[string]): string =
   result = bin
@@ -127,6 +132,7 @@ proc importproject(opts: ImporterOpts,
     elif opts.skipPreprocess:
       ppFiles.add(f & ".pp")
     else:
+      # opts.srcmods.anyIt(it.file)
       ppFiles.add ccpreprocess(f, ccopts)
 
   # Run pre-processor

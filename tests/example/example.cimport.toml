@@ -6,7 +6,7 @@ name = "example"
 sources = "../example_includes"
 globs = ["**/*.h"]
 
-[[mods]]
+[[srcmods]]
 file = "example.h"
 peg = "'int unix = 0'"
 by = "int unix = 2"
