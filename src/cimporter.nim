@@ -34,14 +34,14 @@ type
     defines {.defaultVal: @[].}: seq[string]
     outdir {.defaultVal: "".}: string
     skipProjMangle {.defaultVal: false.}: bool
-    subs*: seq[SourceReplace]
+    subs {.defaultVal: @[].}: seq[SourceReplace]
 
   ImporterConfig* = object
     skips: seq[string]
     imports: seq[ImportConfig]
 
   SourceReplace* = object
-    file*: Peg
+    file*: Glob
     peg*: Peg
     repl*: string
 
@@ -58,11 +58,12 @@ proc constructObject*(
   constructScalarItem(s, item, Peg):
     result = peg(item.scalarContent)
 
-# proc readValue*(r: var TomlReader, value: var Peg) =
-#   let s = r.parseAsString()
-#   try: value = peg(s)
-#   except:
-#     echo "Error parsing peg: ", s
+proc constructObject*(
+    s: var YamlStream, c: ConstructionContext, result: var Glob) =
+  constructScalarItem(s, item, Glob):
+    result = glob(item.scalarContent)
+
+proc `$`*(g: Glob): string = "Glob(" & g.pattern & ")"
 
 proc mkCmd(bin: string, args: openArray[string]): string =
   result = bin
@@ -145,7 +146,7 @@ proc importproject(opts: CImporterOpts,
     elif opts.skipPreprocess:
       ppFiles.add(f & ".pp")
     else:
-      let reps = cfg.subs.filterIt(f.endsWith(it.file)).mapIt((it.peg, it.repl))
+      let reps = cfg.subs.filterIt(f.matches(it.file)).mapIt((it.peg, it.repl))
       ppFiles.add ccpreprocess(f, ccopts, reps)
 
   # Run pre-processor

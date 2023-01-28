@@ -1,3 +1,3 @@
-let unix*: cint = 2
+let unix*: cint = 0
 
 proc example*(): cint
