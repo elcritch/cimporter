@@ -120,12 +120,6 @@ proc importproject(opts: CImporterOpts,
                     ) =
   createDir cfg.outdir
 
-  let c2nProj = (cfg.outdir/cfg.name).addFileExt(".c2nim")
-  if not fileExists c2nProj:
-    let fl = open(c2nProj, fmWrite); fl.write("\n"); fl.close()
-  var c2n = @[c2nProj.absolutePath]
-  if opts.projC2Nim != "": c2n.insert(opts.projC2Nim, 0)
-
   # run commands
   var files: seq[string]
   for pat in cfg.globs:
@@ -146,16 +140,22 @@ proc importproject(opts: CImporterOpts,
   # Run pre-processor
   var ppFiles: seq[string]
   for f in files:
-    if f.relativePath(&"{cfg.sources}") in skips:
-      echo "SKIPPING: ", f
-    elif opts.skipPreprocess:
-      ppFiles.add(f & ".pp")
+    let skipFile = f.relativePath(&"{cfg.sources}") in skips
+    if opts.skipPreprocess:
+      ppFiles.add(f)
     else:
       let subs = cfg.subs.filterIt(f.endsWith(it.file)).mapIt((it.peg, it.repl))
       let dels = cfg.dels.filterIt(f.endsWith(it.file)).mapIt((it.match, it.until))
-      ppFiles.add ccpreprocess(f, ccopts, subs, dels)
+      ppFiles.add ccpreprocess(f, ccopts, subs, dels, skipFile)
 
-  # Run pre-processor
+  # Run C2NIM
+  let c2nProj = (cfg.outdir/cfg.name).addFileExt(".c2nim")
+  if not fileExists c2nProj:
+    let fl = open(c2nProj, fmWrite); fl.write("\n"); fl.close()
+  var c2n = @[c2nProj.absolutePath]
+  if opts.projC2Nim != "":
+    c2n.insert(opts.projC2Nim, 0)
+
   var cmds: seq[string]
   for pp in ppFiles:
     cmds.add(mkC2NimCmd(pp, c2n, cfg))
