@@ -11,3 +11,6 @@ imports:
     - file: "example.h"
       peg: "'int unix = 0'"
       repl: "int unix = 2"
+    dels:
+    - file: "subexample.h"
+      match: "'delme'"

@@ -1,2 +1,4 @@
 
 int subexample();
+
+int delme();

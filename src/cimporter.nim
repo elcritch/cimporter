@@ -35,6 +35,7 @@ type
     outdir {.defaultVal: "".}: string
     skipProjMangle {.defaultVal: false.}: bool
     subs {.defaultVal: @[].}: seq[SourceReplace]
+    dels {.defaultVal: @[].}: seq[SourceDelete]
 
   ImporterConfig* = object
     skips: seq[string]
@@ -44,6 +45,12 @@ type
     file*: Peg
     peg*: Peg
     repl*: string
+  
+  SourceDelete* = object
+    file*: Peg
+    match*: Peg
+    until* {.defaultVal: Peg.none.}: Option[Peg]
+
 
 const dflOpts* = CImporterOpts(
     proj: "./",
@@ -109,8 +116,7 @@ proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
 
 proc importproject(opts: CImporterOpts,
                     cfg: ImportConfig,
-                    skips: HashSet[string],
-                    # subs: seq[SourceReplace]
+                    skips: HashSet[string]
                     ) =
   createDir cfg.outdir
 
@@ -145,8 +151,9 @@ proc importproject(opts: CImporterOpts,
     elif opts.skipPreprocess:
       ppFiles.add(f & ".pp")
     else:
-      let reps = cfg.subs.filterIt(f.endsWith(it.file)).mapIt((it.peg, it.repl))
-      ppFiles.add ccpreprocess(f, ccopts, reps)
+      let subs = cfg.subs.filterIt(f.endsWith(it.file)).mapIt((it.peg, it.repl))
+      let dels = cfg.dels.filterIt(f.endsWith(it.file)).mapIt((it.match, it.until))
+      ppFiles.add ccpreprocess(f, ccopts, subs, dels)
 
   # Run pre-processor
   var cmds: seq[string]
