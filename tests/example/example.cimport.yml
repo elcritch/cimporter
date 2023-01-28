@@ -7,8 +7,7 @@ imports:
   - name: "example"
     sources: "../example_includes"
     globs: ["**/*.h"]
-
-srcsub:
-  - file: "example.h"
-    peg: "'int unix = 0'"
-    repl: "int unix = 2"
+    subs:
+    - file: "example.h"
+      peg: "'int unix = 0'"
+      repl: "int unix = 2"

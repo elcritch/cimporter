@@ -11,7 +11,7 @@ import cimporter/m4parser
 import glob
 
 type
-  ImporterOpts* = object
+  CImporterOpts* = object
     proj: AbsFile
     projDir: AbsFile
     projName: string
@@ -34,18 +34,18 @@ type
     defines {.defaultVal: @[].}: seq[string]
     outdir {.defaultVal: "".}: string
     skipProjMangle {.defaultVal: false.}: bool
+    subs*: seq[SourceReplace]
 
   ImporterConfig* = object
     skips: seq[string]
     imports: seq[ImportConfig]
-    srcsub*: seq[SourceReplace]
 
   SourceReplace* = object
     file*: Peg
     peg*: Peg
     repl*: string
 
-const dflOpts* = ImporterOpts(
+const dflOpts* = CImporterOpts(
     proj: "./",
     compiler: "cc",
     ccExpandFlag: "-E",
@@ -107,10 +107,10 @@ proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
     raise newException(ValueError, "c2nim failed")
   echo "RESULT: ", res
 
-proc importproject(opts: ImporterOpts,
+proc importproject(opts: CImporterOpts,
                     cfg: ImportConfig,
                     skips: HashSet[string],
-                    subs: seq[SourceReplace]
+                    # subs: seq[SourceReplace]
                     ) =
   createDir cfg.outdir
 
@@ -145,7 +145,7 @@ proc importproject(opts: ImporterOpts,
     elif opts.skipPreprocess:
       ppFiles.add(f & ".pp")
     else:
-      let reps = subs.filterIt(f.endsWith(it.file)).mapIt((it.peg, it.repl))
+      let reps = cfg.subs.filterIt(f.endsWith(it.file)).mapIt((it.peg, it.repl))
       ppFiles.add ccpreprocess(f, ccopts, reps)
 
   # Run pre-processor
@@ -157,7 +157,7 @@ proc importproject(opts: ImporterOpts,
 
 
 
-proc runImports*(opts: var ImporterOpts) =
+proc runImports*(opts: var CImporterOpts) =
   echo "importing..."
   opts.proj = opts.proj.absolutePath().AbsDir
   if opts.projName == "":
@@ -181,7 +181,7 @@ proc runImports*(opts: var ImporterOpts) =
     imp.outdir =  if imp.outdir.len() == 0: opts.proj / "src"
                   else: imp.outdir
     imp.sources = opts.proj / imp.sources
-    importproject(opts, imp, skips, configs.srcsub)
+    importproject(opts, imp, skips)
 
   echo "PWD: ", getCurrentDir()
   echo "[Success]"
