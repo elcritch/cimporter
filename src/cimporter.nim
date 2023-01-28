@@ -1,8 +1,13 @@
 import std/[os, sequtils, osproc, strutils, strformat, sets, json]
 import std/[tables, pegs]
 
+import yaml
+import yaml/parser
+import yaml/stream
+import yaml/serialization, streams
+
 import cimporter/m4parser
-import toml_serialization
+# import toml_serialization
 import glob
 
 type
@@ -25,10 +30,10 @@ type
     name: string
     sources: string
     globs: seq[string]
-    includes: seq[string]
-    defines*: seq[string]
-    outdir: string
-    skipProjMangle: bool
+    includes {.defaultVal: @[].}: seq[string]
+    defines {.defaultVal: @[].}: seq[string]
+    outdir {.defaultVal: "".}: string
+    skipProjMangle {.defaultVal: false.}: bool
 
   ImporterConfig* = object
     skips: seq[string]
@@ -48,11 +53,16 @@ const dflOpts* = ImporterOpts(
     ccFlag: @["-CC","-dI","-dD"]
 )
 
-proc readValue*(r: var TomlReader, value: var Peg) =
-  let s = r.parseAsString()
-  try: value = peg(s)
-  except:
-    echo "Error parsing peg: ", s
+proc constructObject*(
+    s: var YamlStream, c: ConstructionContext, result: var Peg) =
+  constructScalarItem(s, item, Peg):
+    result = peg(item.scalarContent)
+
+# proc readValue*(r: var TomlReader, value: var Peg) =
+#   let s = r.parseAsString()
+#   try: value = peg(s)
+#   except:
+#     echo "Error parsing peg: ", s
 
 proc mkCmd(bin: string, args: openArray[string]): string =
   result = bin
@@ -152,7 +162,7 @@ proc runImports*(opts: var ImporterOpts) =
   opts.proj = opts.proj.absolutePath().AbsDir
   if opts.projName == "":
     opts.projName = opts.proj.lastPathPart()
-  let optsPath = opts.proj / opts.projName & ".cimport.toml"
+  let optsPath = opts.proj / opts.projName & ".cimport.yml"
   if opts.projC2Nim == "":
     opts.projC2Nim = opts.proj / opts.projName & ".c2nim"
   if not opts.projC2Nim.fileExists():
@@ -160,16 +170,18 @@ proc runImports*(opts: var ImporterOpts) =
   echo "Options Path: ", optsPath 
   echo "C2Nim Path: ", opts.projC2Nim 
 
-  var toml = Toml.loadFile(optsPath, ImporterConfig)
-  echo "config: ", toml
-  let skips = toml.skips.toHashSet()
-  for item in toml.imports:
+  var configs: ImporterConfig
+  var s = newFileStream(optsPath)
+  load(s, configs)
+  echo "config: ", configs
+  let skips = configs.skips.toHashSet()
+  for item in configs.imports:
     var imp = item
     echo "import: ", imp
     imp.outdir =  if imp.outdir.len() == 0: opts.proj / "src"
                   else: imp.outdir
     imp.sources = opts.proj / imp.sources
-    importproject(opts, imp, skips, toml.srcsub)
+    importproject(opts, imp, skips, configs.srcsub)
 
   echo "PWD: ", getCurrentDir()
   echo "[Success]"
