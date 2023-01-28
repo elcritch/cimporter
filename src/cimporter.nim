@@ -41,7 +41,7 @@ type
     imports: seq[ImportConfig]
 
   SourceReplace* = object
-    file*: Glob
+    file*: Peg
     peg*: Peg
     repl*: string
 
@@ -58,12 +58,11 @@ proc constructObject*(
   constructScalarItem(s, item, Peg):
     result = peg(item.scalarContent)
 
-proc constructObject*(
-    s: var YamlStream, c: ConstructionContext, result: var Glob) =
-  constructScalarItem(s, item, Glob):
-    result = glob(item.scalarContent)
-
-proc `$`*(g: Glob): string = "Glob(" & g.pattern & ")"
+# proc readValue*(r: var TomlReader, value: var Peg) =
+#   let s = r.parseAsString()
+#   try: value = peg(s)
+#   except:
+#     echo "Error parsing peg: ", s
 
 proc mkCmd(bin: string, args: openArray[string]): string =
   result = bin
@@ -146,7 +145,7 @@ proc importproject(opts: CImporterOpts,
     elif opts.skipPreprocess:
       ppFiles.add(f & ".pp")
     else:
-      let reps = cfg.subs.filterIt(f.matches(it.file)).mapIt((it.peg, it.repl))
+      let reps = cfg.subs.filterIt(f.endsWith(it.file)).mapIt((it.peg, it.repl))
       ppFiles.add ccpreprocess(f, ccopts, reps)
 
   # Run pre-processor
