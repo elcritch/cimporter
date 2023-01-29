@@ -46,6 +46,7 @@ type
     file*: Peg
     extraArgs*: seq[string]
     fileContents* {.defaultVal: "".}: string
+    rawNims* {.defaultVal: "".}: string
 
   SourceReplace* = object
     file*: Peg
@@ -180,10 +181,12 @@ proc importproject(opts: CImporterOpts,
     let c2extras = c2nimExtras.getOrDefault(pp, @[])
     let extraArgs = c2extras.mapIt(it.extraArgs).concat().mapIt("--"&it)
     let c2files = c2extras.mapIt(it.fileContents).join("")
-    if c2files.len() > 0:
+    let c2rawNims = c2extras.mapIt(it.rawNims).join("")
+    if c2files.len() > 0 or c2rawNims.len() > 0:
       echo "EXTRA C2N: ", pp
       let ppC2 = pp.changeFileExt(".c2nim")
-      writeFile(ppC2 , c2files)
+      let raws = if c2rawNims.len() == 0: "" else: "#@\n" & c2rawNims & "\n@#"
+      writeFile(ppC2 , c2files & raws)
       c2n.add ppC2
     cmds.add(mkC2NimCmd(pp, c2n, cfg, extraArgs))
   # echo "C2NIM CMDS: ", cmds
