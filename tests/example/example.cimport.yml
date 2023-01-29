@@ -6,8 +6,8 @@ imports:
     skips:
     - badExample1.c
     - badExample2.c
-    csrcmods:
-    - file: "subexample.h"
+    cSrcMods:
+    - csrcPeg: "subexample.h"
       subs:
       - peg: "'int unix = 0'"
         repl: "int unix = 2"

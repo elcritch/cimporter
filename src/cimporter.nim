@@ -38,10 +38,10 @@ type
     defines {.defaultVal: @[].}: seq[string]
     outdir {.defaultVal: "".}: string
     skipProjMangle {.defaultVal: false.}: bool
-    csrcmods {.defaultVal: @[].}: seq[CSrcMods]
+    cSrcMods {.defaultVal: @[].}: seq[CSrcMods]
   
   CSrcMods* = object
-    file*: Peg
+    csrcPeg*: Peg
     subs {.defaultVal: @[].}: seq[SourceReplace]
     dels {.defaultVal: @[].}: seq[SourceDelete]
     c2nims {.defaultVal: @[].}: seq[C2NimExtras]
@@ -147,7 +147,7 @@ proc importproject(opts: CImporterOpts,
   ccopts.defines.add cfg.defines
 
   template fileMatches(obj: untyped, f: string): auto =
-    obj.filterIt(f.endsWith(it.file))
+    obj.filterIt(f.endsWith(it.csrcPeg))
 
   # Run pre-processor
   var c2nimExtras: Table[string, seq[C2NimExtras]]
