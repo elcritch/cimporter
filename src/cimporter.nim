@@ -178,7 +178,7 @@ proc importproject(opts: CImporterOpts,
     #   writeFile(fc2path, c2ns.join("\n"))
     #   c2nLocal.add fc2path
     cmds.add(mkC2NimCmd(pp, c2nLocal, cfg, extraArgs))
-  echo "C2NIM CMDS: ", cmds
+  # echo "C2NIM CMDS: ", cmds
   run cmds
 
 
