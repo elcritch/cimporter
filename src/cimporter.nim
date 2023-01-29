@@ -167,10 +167,11 @@ proc importproject(opts: CImporterOpts,
     if extras.len() > 0: c2nimExtras[pf] = extras
 
   # Run C2NIM
-  let c2nProj = (cfg.outdir/cfg.name).addFileExt(".c2nim")
-  if not fileExists c2nProj:
-    let fl = open(c2nProj, fmWrite); fl.write("\n"); fl.close()
-  var c2n = @[c2nProj.absolutePath]
+  # let c2nProj = (cfg.outdir/cfg.name).addFileExt(".c2nim")
+  # if not fileExists c2nProj:
+  #   let fl = open(c2nProj, fmWrite); fl.write("\n"); fl.close()
+  # var c2n = @[c2nProj.absolutePath]
+  var c2n: seq[string]
   if opts.projC2Nim != "":
     c2n.insert(opts.projC2Nim, 0)
 
