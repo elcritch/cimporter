@@ -44,7 +44,7 @@ type
 
   C2NimExtras* = object
     file*: Peg
-    extraArgs*: string
+    extraArgs*: seq[string]
 
   SourceReplace* = object
     file*: Peg
