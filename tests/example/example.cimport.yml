@@ -8,10 +8,10 @@ imports:
     - badExample2.c
     cSrcMods:
     - cSrcPeg: "subexample.h"
-      subs:
+      substitutes:
       - peg: "'int unix = 0'"
         repl: "int unix = 2"
-      dels:
+      deletes:
       - match: "'delme'"
       - match: "'delsA'"
         until: "'otherexample'"

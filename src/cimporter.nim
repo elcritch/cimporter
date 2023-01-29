@@ -42,9 +42,9 @@ type
   
   CSrcMods* = object
     cSrcPeg*: Peg
-    subs {.defaultVal: @[].}: seq[SourceReplace]
-    dels {.defaultVal: @[].}: seq[SourceDelete]
-    c2Nims {.defaultVal: @[].}: seq[C2NimExtras]
+    substitutes {.defaultVal: @[].}: seq[SourceReplace]
+    deletes {.defaultVal: @[].}: seq[SourceDelete]
+    c2NimExtras {.defaultVal: @[].}: seq[C2NimExtras]
 
   C2NimExtras* = object
     extraArgs* {.defaultVal: @[].}: seq[string]
@@ -156,8 +156,8 @@ proc importproject(opts: CImporterOpts,
   for f in files:
     let skipFile = f.relativePath(&"{cfg.sources}") in skips
     let mods = cfg.csrcmods.fileMatches(f)
-    let subs = mods.mapIt(it.subs.mapIt((it.peg, it.repl))).concat()
-    let dels = mods.mapIt(it.dels.mapIt((it.match, it.until))).concat()
+    let subs = mods.mapIt(it.substitutes.mapIt((it.peg, it.repl))).concat()
+    let dels = mods.mapIt(it.deletes.mapIt((it.match, it.until))).concat()
     let pf = 
       if opts.skipPreprocess:
         copyFile(f, f & ".pp")
@@ -166,7 +166,7 @@ proc importproject(opts: CImporterOpts,
         ccpreprocess(f, ccopts, subs, dels, skipFile)
     ppFiles.add(pf)
 
-    let extras = mods.mapIt(it.c2nims).concat()
+    let extras = mods.mapIt(it.c2nimExtras).concat()
     if extras.len() > 0:
       c2nimExtras[pf] = extras
 
