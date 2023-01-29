@@ -41,10 +41,10 @@ type
     cSrcMods {.defaultVal: @[].}: seq[CSrcMods]
   
   CSrcMods* = object
-    csrcPeg*: Peg
+    cSrcPeg*: Peg
     subs {.defaultVal: @[].}: seq[SourceReplace]
     dels {.defaultVal: @[].}: seq[SourceDelete]
-    c2nims {.defaultVal: @[].}: seq[C2NimExtras]
+    c2Nims {.defaultVal: @[].}: seq[C2NimExtras]
 
   C2NimExtras* = object
     extraArgs* {.defaultVal: @[].}: seq[string]

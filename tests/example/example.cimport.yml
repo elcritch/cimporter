@@ -7,7 +7,7 @@ imports:
     - badExample1.c
     - badExample2.c
     cSrcMods:
-    - csrcPeg: "subexample.h"
+    - cSrcPeg: "subexample.h"
       subs:
       - peg: "'int unix = 0'"
         repl: "int unix = 2"
