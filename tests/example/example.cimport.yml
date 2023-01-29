@@ -3,17 +3,16 @@ imports:
   - name: "example"
     sources: "../example_includes"
     globs: ["**/*.h"]
-    subs:
-    - file: "example.h"
-      peg: "'int unix = 0'"
-      repl: "int unix = 2"
-    dels:
-    - file: "subexample.h"
-      match: "'delme'"
-    - file: "subexample.h"
-      match: "'delsA'"
-      until: "'otherexample'"
     skips:
     - badExample1.c
     - badExample2.c
+    csrcmods:
+    - file: "subexample.h"
+      subs:
+      - peg: "'int unix = 0'"
+        repl: "int unix = 2"
+      dels:
+      - match: "'delme'"
+      - match: "'delsA'"
+        until: "'otherexample'"
 

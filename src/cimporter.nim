@@ -26,6 +26,9 @@ type
     noDefaultFlags: bool
     `include`: seq[string]
 
+  ImporterConfig* = object
+    imports: seq[ImportConfig]
+
   ImportConfig* = object
     name: string
     sources: string
@@ -35,26 +38,24 @@ type
     defines {.defaultVal: @[].}: seq[string]
     outdir {.defaultVal: "".}: string
     skipProjMangle {.defaultVal: false.}: bool
+    csrcmods {.defaultVal: @[].}: seq[CSrcMods]
+  
+  CSrcMods* = object
+    file*: Peg
     subs {.defaultVal: @[].}: seq[SourceReplace]
     dels {.defaultVal: @[].}: seq[SourceDelete]
     c2nims {.defaultVal: @[].}: seq[C2NimExtras]
 
-  ImporterConfig* = object
-    imports: seq[ImportConfig]
-
   C2NimExtras* = object
-    file*: Peg
     extraArgs* {.defaultVal: @[].}: seq[string]
     fileContents* {.defaultVal: "".}: string
     rawNims* {.defaultVal: "".}: string
 
   SourceReplace* = object
-    file*: Peg
     peg*: Peg
     repl*: string
   
   SourceDelete* = object
-    file*: Peg
     match*: Peg
     until* {.defaultVal: Peg.none.}: Option[Peg]
 
@@ -154,18 +155,20 @@ proc importproject(opts: CImporterOpts,
   let skips = cfg.skips.toHashSet()
   for f in files:
     let skipFile = f.relativePath(&"{cfg.sources}") in skips
+    let mods = cfg.csrcmods.fileMatches(f)
+    let subs = mods.mapIt(it.subs.mapIt((it.peg, it.repl))).concat()
+    let dels = mods.mapIt(it.dels.mapIt((it.match, it.until))).concat()
     let pf = 
       if opts.skipPreprocess:
         copyFile(f, f & ".pp")
         f & ".pp"
       else:
-        let subs = cfg.subs.fileMatches(f).mapIt((it.peg, it.repl))
-        let dels = cfg.dels.fileMatches(f).mapIt((it.match, it.until))
         ccpreprocess(f, ccopts, subs, dels, skipFile)
     ppFiles.add(pf)
 
-    let extras = cfg.c2nims.fileMatches(f)
-    if extras.len() > 0: c2nimExtras[pf] = extras
+    let extras = mods.mapIt(it.c2nims).concat()
+    if extras.len() > 0:
+      c2nimExtras[pf] = extras
 
   # Run C2NIM
   # let c2nProj = (cfg.outdir/cfg.name).addFileExt(".c2nim")
