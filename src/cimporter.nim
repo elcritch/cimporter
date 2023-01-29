@@ -36,15 +36,15 @@ type
     skipProjMangle {.defaultVal: false.}: bool
     subs {.defaultVal: @[].}: seq[SourceReplace]
     dels {.defaultVal: @[].}: seq[SourceDelete]
-    c2nims {.defaultVal: @[].}: seq[ConfigC2Nim]
+    c2nims {.defaultVal: @[].}: seq[C2NimExtras]
 
   ImporterConfig* = object
     skips: seq[string]
     imports: seq[ImportConfig]
 
-  ConfigC2Nim* = object
+  C2NimExtras* = object
     file*: Peg
-    contents*: string
+    extraArgs*: string
 
   SourceReplace* = object
     file*: Peg
@@ -92,6 +92,7 @@ proc projMangles(proj: string): seq[string] =
 proc mkC2NimCmd(file: AbsFile,
                 pre: seq[string],
                 cfg: ImportConfig,
+                extraArgs: seq[string],
                 ): string =
   let
     relfile = file.relativePath(cfg.sources)
@@ -109,7 +110,7 @@ proc mkC2NimCmd(file: AbsFile,
   let files = @[ &"--concat:all"] & pre &
               @[ $file, "--out:" & tgtfile]
 
-  result = mkCmd("c2nim", post & mangles & files)
+  result = mkCmd("c2nim", post & mangles & files & extraArgs)
   
 
 proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
@@ -150,7 +151,8 @@ proc importproject(opts: CImporterOpts,
   for f in files:
     let skipFile = f.relativePath(&"{cfg.sources}") in skips
     if opts.skipPreprocess:
-      ppFiles.add(f)
+      copyFile(f, f & ".pp")
+      ppFiles.add(f & ".pp")
     else:
       let subs = cfg.subs.fileMatches(f).mapIt((it.peg, it.repl))
       let dels = cfg.dels.fileMatches(f).mapIt((it.match, it.until))
@@ -168,12 +170,14 @@ proc importproject(opts: CImporterOpts,
   echo "PP FILES: ", ppFiles
   for pp in ppFiles:
     var c2nLocal = c2n
-    let c2ns = cfg.c2nims.fileMatches(pp).mapIt((it.contents))
-    if c2ns.len() > 0:
-      let fc2path = pp.changeFileExt("c2nim")
-      writeFile(fc2path, c2ns.join("\n"))
-      c2nLocal.add fc2path
-    cmds.add(mkC2NimCmd(pp, c2nLocal, cfg))
+    let extras = cfg.c2nims.fileMatches(pp.changeFileExt(".pp")).mapIt(it.extraArgs)
+    let extraArgs = extras.concat().mapIt("--"&it)
+    # if c2ns.len() > 0:
+    #   echo "EXTRA C2N: ", pp
+    #   let fc2path = pp.changeFileExt("c2nim")
+    #   writeFile(fc2path, c2ns.join("\n"))
+    #   c2nLocal.add fc2path
+    cmds.add(mkC2NimCmd(pp, c2nLocal, cfg, extraArgs))
   echo "C2NIM CMDS: ", cmds
   run cmds
 
