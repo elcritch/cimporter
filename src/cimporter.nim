@@ -30,6 +30,7 @@ type
     name: string
     sources: string
     globs: seq[string]
+    skips {.defaultVal: @[].}: seq[string]
     includes {.defaultVal: @[].}: seq[string]
     defines {.defaultVal: @[].}: seq[string]
     outdir {.defaultVal: "".}: string
@@ -39,12 +40,11 @@ type
     c2nims {.defaultVal: @[].}: seq[C2NimExtras]
 
   ImporterConfig* = object
-    skips: seq[string]
     imports: seq[ImportConfig]
 
   C2NimExtras* = object
     file*: Peg
-    extraArgs*: seq[string]
+    extraArgs* {.defaultVal: @[].}: seq[string]
     fileContents* {.defaultVal: "".}: string
     rawNims* {.defaultVal: "".}: string
 
@@ -71,12 +71,6 @@ proc constructObject*(
     s: var YamlStream, c: ConstructionContext, result: var Peg) =
   constructScalarItem(s, item, Peg):
     result = peg(item.scalarContent)
-
-# proc readValue*(r: var TomlReader, value: var Peg) =
-#   let s = r.parseAsString()
-#   try: value = peg(s)
-#   except:
-#     echo "Error parsing peg: ", s
 
 proc mkCmd(bin: string, args: openArray[string]): string =
   result = bin
@@ -123,10 +117,14 @@ proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
   echo "RESULT: ", res
 
 proc importproject(opts: CImporterOpts,
-                    cfg: ImportConfig,
-                    skips: HashSet[string]
+                    cfg: ImportConfig
                     ) =
   createDir cfg.outdir
+
+  echo "=== Importing Project ==="
+  for f, v in cfg.fieldPairs():
+    echo "\t", f, ": ", v
+  echo ""
 
   # run commands
   var files: seq[string]
@@ -151,6 +149,7 @@ proc importproject(opts: CImporterOpts,
   # Run pre-processor
   var c2nimExtras: Table[string, seq[C2NimExtras]]
   var ppFiles: seq[string]
+  let skips = cfg.skips.toHashSet()
   for f in files:
     let skipFile = f.relativePath(&"{cfg.sources}") in skips
     let pf = 
@@ -212,14 +211,14 @@ proc runImports*(opts: var CImporterOpts) =
   var s = newFileStream(optsPath)
   load(s, configs)
   echo "config: ", configs
-  let skips = configs.skips.toHashSet()
+  # let skips = configs.skips.toHashSet()
   for item in configs.imports:
     var imp = item
-    echo "import: ", imp
+    # echo "import: ", imp
     imp.outdir =  if imp.outdir.len() == 0: opts.proj / "src"
                   else: imp.outdir
     imp.sources = opts.proj / imp.sources
-    importproject(opts, imp, skips)
+    importproject(opts, imp)
 
   echo "PWD: ", getCurrentDir()
   echo "[Success]"
