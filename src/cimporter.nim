@@ -38,10 +38,10 @@ type
     defines {.defaultVal: @[].}: seq[string]
     outdir {.defaultVal: "".}: string
     skipProjMangle {.defaultVal: false.}: bool
-    cSrcMods {.defaultVal: @[].}: seq[CSrcMods]
+    cSourceModifications {.defaultVal: @[].}: seq[CSrcMods]
   
   CSrcMods* = object
-    cSrcPeg*: Peg
+    cSourceModification*: Peg
     substitutes {.defaultVal: @[].}: seq[SourceReplace]
     deletes {.defaultVal: @[].}: seq[SourceDelete]
     c2NimExtras {.defaultVal: @[].}: seq[C2NimExtras]
@@ -147,7 +147,7 @@ proc importproject(opts: CImporterOpts,
   ccopts.defines.add cfg.defines
 
   template fileMatches(obj: untyped, f: string): auto =
-    obj.filterIt(f.endsWith(it.csrcPeg))
+    obj.filterIt(f.endsWith(it.cSourceModification))
 
   # Run pre-processor
   var c2nimExtras: Table[string, seq[C2NimExtras]]
@@ -155,7 +155,7 @@ proc importproject(opts: CImporterOpts,
   let skips = cfg.skips.toHashSet()
   for f in files:
     let skipFile = f.relativePath(&"{cfg.sources}") in skips
-    let mods = cfg.csrcmods.fileMatches(f)
+    let mods = cfg.cSourceModifications.fileMatches(f)
     let subs = mods.mapIt(it.substitutes.mapIt((it.peg, it.repl))).concat()
     let dels = mods.mapIt(it.deletes.mapIt((it.match, it.until))).concat()
     let pf = 
