@@ -70,10 +70,9 @@ const dflOpts* = CImporterOpts(
 proc constructObject*(
     s: var YamlStream, c: ConstructionContext, result: var Peg) =
   constructScalarItem(s, item, Peg):
-    try:
-      result = peg(item.scalarContent)
-    except:
-      raise newException(YamlConstructionError, "peg: " & getCurrentExceptionMsg())
+    let s = item.scalarContent
+    try: result = peg(s)
+    except: raise newException(YamlConstructionError, "peg: " & getCurrentExceptionMsg())
 
 proc mkCmd(bin: string, args: openArray[string]): string =
   result = bin
