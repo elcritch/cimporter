@@ -53,7 +53,7 @@ type
 
   SourceReplace* = object
     peg*: Peg
-    repl*: string
+    repl* {.defaultVal: "".}: string
   
   SourceDelete* = object
     match*: Peg
