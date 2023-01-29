@@ -36,10 +36,15 @@ type
     skipProjMangle {.defaultVal: false.}: bool
     subs {.defaultVal: @[].}: seq[SourceReplace]
     dels {.defaultVal: @[].}: seq[SourceDelete]
+    c2nims {.defaultVal: @[].}: seq[ConfigC2Nim]
 
   ImporterConfig* = object
     skips: seq[string]
     imports: seq[ImportConfig]
+
+  ConfigC2Nim* = object
+    file*: Peg
+    contents*: string
 
   SourceReplace* = object
     file*: Peg
@@ -137,6 +142,9 @@ proc importproject(opts: CImporterOpts,
   ccopts.defines.add opts.defines
   ccopts.defines.add cfg.defines
 
+  template fileMatches(obj: untyped, f: string): auto =
+    obj.filterIt(f.endsWith(it.file))
+
   # Run pre-processor
   var ppFiles: seq[string]
   for f in files:
@@ -144,8 +152,8 @@ proc importproject(opts: CImporterOpts,
     if opts.skipPreprocess:
       ppFiles.add(f)
     else:
-      let subs = cfg.subs.filterIt(f.endsWith(it.file)).mapIt((it.peg, it.repl))
-      let dels = cfg.dels.filterIt(f.endsWith(it.file)).mapIt((it.match, it.until))
+      let subs = cfg.subs.fileMatches(f).mapIt((it.peg, it.repl))
+      let dels = cfg.dels.fileMatches(f).mapIt((it.match, it.until))
       ppFiles.add ccpreprocess(f, ccopts, subs, dels, skipFile)
 
   # Run C2NIM
@@ -157,9 +165,16 @@ proc importproject(opts: CImporterOpts,
     c2n.insert(opts.projC2Nim, 0)
 
   var cmds: seq[string]
+  echo "PP FILES: ", ppFiles
   for pp in ppFiles:
-    cmds.add(mkC2NimCmd(pp, c2n, cfg))
-  # echo "C2NIM CMDS: ", cmds
+    var c2nLocal = c2n
+    let c2ns = cfg.c2nims.fileMatches(pp).mapIt((it.contents))
+    if c2ns.len() > 0:
+      let fc2path = pp.changeFileExt("c2nim")
+      writeFile(fc2path, c2ns.join("\n"))
+      c2nLocal.add fc2path
+    cmds.add(mkC2NimCmd(pp, c2nLocal, cfg))
+  echo "C2NIM CMDS: ", cmds
   run cmds
 
 
