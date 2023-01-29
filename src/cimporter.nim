@@ -45,6 +45,7 @@ type
   C2NimExtras* = object
     file*: Peg
     extraArgs*: seq[string]
+    fileContents* {.defaultVal: "".}: string
 
   SourceReplace* = object
     file*: Peg
@@ -147,7 +148,7 @@ proc importproject(opts: CImporterOpts,
     obj.filterIt(f.endsWith(it.file))
 
   # Run pre-processor
-  var extraArgs: Table[string, seq[string]]
+  var c2nimExtras: Table[string, seq[C2NimExtras]]
   var ppFiles: seq[string]
   for f in files:
     let skipFile = f.relativePath(&"{cfg.sources}") in skips
@@ -161,9 +162,8 @@ proc importproject(opts: CImporterOpts,
         ccpreprocess(f, ccopts, subs, dels, skipFile)
     ppFiles.add(pf)
 
-    let extras = cfg.c2nims.fileMatches(f).mapIt(it.extraArgs)
-    if extras.len() > 0:
-      extraArgs[pf] = extras.concat().mapIt("--"&it)
+    let extras = cfg.c2nims.fileMatches(f)
+    if extras.len() > 0: c2nimExtras[pf] = extras
 
   # Run C2NIM
   let c2nProj = (cfg.outdir/cfg.name).addFileExt(".c2nim")
@@ -176,11 +176,16 @@ proc importproject(opts: CImporterOpts,
   var cmds: seq[string]
   echo "PP FILES: ", ppFiles
   for pp in ppFiles:
-    #   echo "EXTRA C2N: ", pp
-    #   let fc2path = pp.changeFileExt("c2nim")
-    #   writeFile(fc2path, c2ns.join("\n"))
-    #   c2nLocal.add fc2path
-    cmds.add(mkC2NimCmd(pp, c2n, cfg, extraArgs.getOrDefault(pp, @[])))
+    var c2n = c2n
+    let c2extras = c2nimExtras.getOrDefault(pp, @[])
+    let extraArgs = c2extras.mapIt(it.extraArgs).concat().mapIt("--"&it)
+    let c2files = c2extras.mapIt(it.fileContents).join("")
+    if c2files.len() > 0:
+      echo "EXTRA C2N: ", pp
+      let ppC2 = pp.changeFileExt(".c2nim")
+      writeFile(ppC2 , c2files)
+      c2n.add ppC2
+    cmds.add(mkC2NimCmd(pp, c2n, cfg, extraArgs))
   # echo "C2NIM CMDS: ", cmds
   run cmds
 
