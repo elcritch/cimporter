@@ -58,6 +58,7 @@ type
   SourceDelete* = object
     match*: Peg
     until* {.defaultVal: Peg.none.}: Option[Peg]
+    inclusive* {.defaultVal: false.}: bool
 
 
 const dflOpts* = CImporterOpts(
@@ -157,7 +158,7 @@ proc importproject(opts: CImporterOpts,
     let skipFile = f.relativePath(&"{cfg.sources}") in skips
     let mods = cfg.cSourceModifications.fileMatches(f)
     let subs = mods.mapIt(it.substitutes.mapIt((it.peg, it.repl))).concat()
-    let dels = mods.mapIt(it.deletes.mapIt((it.match, it.until))).concat()
+    let dels = mods.mapIt(it.deletes.mapIt((it.match, (it.until, it.inclusive)))).concat()
     let pf = 
       if opts.skipPreprocess:
         copyFile(f, f & ".pp")
