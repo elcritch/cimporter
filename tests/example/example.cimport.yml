@@ -1,4 +1,5 @@
-
+%TAG !n! tag:nimyaml.org,2016:
+--- 
 imports:
   - name: "example"
     sources: "../example_includes"
@@ -7,7 +8,8 @@ imports:
     - badExample1.c
     - badExample2.c
     cSourceModifications:
-    - cSourceModification: "subexample.h"
+    - !n!custom:CSrcMods
+      cSourceModification: "subexample.h"
       substitutes:
       - peg: "'int unix = 0'"
         repl: "int unix = 2"
