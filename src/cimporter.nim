@@ -60,6 +60,11 @@ type
     until* {.defaultVal: Peg.none.}: Option[Peg]
     inclusive* {.defaultVal: false.}: bool
 
+const defMangles = @[
+  # handle expanded null pointers
+  "--mangle:'__null'=NULL",
+  "--mangle:'__nullptr'=NULL"
+]
 
 const dflOpts* = CImporterOpts(
     proj: "./",
@@ -102,11 +107,11 @@ proc mkC2NimCmd(file: AbsFile,
     cfgC2nim = cfg.outdir/file.extractFilename().
                 changeFileExt("c2nim")
 
-  echo "PRE: ", pre
   createDir(tgtParentFile)
   let post: seq[string] = @["--debug"] # modify progs
-  let mangles = if cfg.skipProjMangle: @[""]
+  var mangles = if cfg.skipProjMangle: @[""]
                 else: projMangles(cfg.name)
+  mangles.add defMangles
   let files = @[ &"--concat:all"] & pre &
               @[ $file, "--out:" & tgtfile]
 
