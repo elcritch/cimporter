@@ -9,6 +9,7 @@ import yaml/serialization, streams
 import cimporter/m4parser
 # import toml_serialization
 import glob
+import print
 
 type
   CImporterOpts* = object
@@ -54,6 +55,7 @@ type
   SourceReplace* = object
     peg*: Peg
     repl* {.defaultVal: "".}: string
+    ignore* {.defaultVal: false.}: bool
   
   SourceDelete* = object
     match*: Peg
@@ -131,8 +133,9 @@ proc importproject(opts: CImporterOpts,
   createDir cfg.outdir
 
   echo "=== Importing Project ==="
-  for f, v in cfg.fieldPairs():
-    echo "\t", f, ": ", v
+  print cfg
+  # for f, v in cfg.fieldPairs():
+  #   echo "\t", f, ": ", v
   echo ""
 
   # run commands
@@ -162,7 +165,10 @@ proc importproject(opts: CImporterOpts,
   for f in files:
     let skipFile = f.relativePath(&"{cfg.sources}") in skips
     let mods = cfg.cSourceModifications.fileMatches(f)
-    let subs = mods.mapIt(it.substitutes.mapIt((it.peg, it.repl))).concat()
+    var subs: seq[(Peg, string)]
+    for s in mods.mapIt(it.substitutes).concat():
+      if s.ignore: subs.add((s.peg, "// !!!ignoring!!! $1"))
+      else: subs.add((s.peg, s.repl))
     let dels = mods.mapIt(it.deletes.mapIt((it.match, (it.until, it.inclusive)))).concat()
     let pf = 
       if opts.skipPreprocess:
@@ -203,8 +209,6 @@ proc importproject(opts: CImporterOpts,
   # echo "C2NIM CMDS: ", cmds
   run cmds
 
-import print
-
 
 proc runImports*(opts: var CImporterOpts) =
   echo "importing..."
@@ -223,8 +227,8 @@ proc runImports*(opts: var CImporterOpts) =
   var s = newFileStream(optsPath)
   load(s, configs)
   # echo "config: ", configs
-  echo "configs: "
-  print configs
+  # echo "configs: "
+  # print configs
   # let skips = configs.skips.toHashSet()
   for item in configs.imports:
     var imp = item
