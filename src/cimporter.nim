@@ -203,6 +203,7 @@ proc importproject(opts: CImporterOpts,
   # echo "C2NIM CMDS: ", cmds
   run cmds
 
+import print
 
 
 proc runImports*(opts: var CImporterOpts) =
@@ -221,7 +222,9 @@ proc runImports*(opts: var CImporterOpts) =
   var configs: ImporterConfig
   var s = newFileStream(optsPath)
   load(s, configs)
-  echo "config: ", configs
+  # echo "config: ", configs
+  echo "configs: "
+  print configs
   # let skips = configs.skips.toHashSet()
   for item in configs.imports:
     var imp = item
