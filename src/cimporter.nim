@@ -55,7 +55,7 @@ type
   SourceReplace* = object
     peg*: Peg
     repl* {.defaultVal: "".}: string
-    ignore* {.defaultVal: false.}: bool
+    comment* {.defaultVal: false.}: bool
   
   SourceDelete* = object
     match*: Peg
@@ -167,7 +167,7 @@ proc importproject(opts: CImporterOpts,
     let mods = cfg.cSourceModifications.fileMatches(f)
     var subs: seq[(Peg, string)]
     for s in mods.mapIt(it.substitutes).concat():
-      if s.ignore: subs.add((s.peg, "// !!!ignoring!!! $1"))
+      if s.comment: subs.add((s.peg, "// !!!ignoring!!! $1"))
       else: subs.add((s.peg, s.repl))
     let dels = mods.mapIt(it.deletes.mapIt((it.match, (it.until, it.inclusive)))).concat()
     let pf = 
