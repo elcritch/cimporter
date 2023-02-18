@@ -110,7 +110,7 @@ proc mkC2NimCmd(file: AbsFile,
                 changeFileExt("c2nim")
 
   createDir(tgtParentFile)
-  let post: seq[string] = @["--debug"] # modify progs
+  let post: seq[string] = @["--debug", "--header:\"" & file.splitFile().name & "\""] # modify progs
   var mangles = if cfg.skipProjMangle: @[""]
                 else: projMangles(cfg.name)
   mangles.add defMangles
@@ -226,8 +226,8 @@ proc runImports*(opts: var CImporterOpts) =
   var configs: ImporterConfig
   var s = newFileStream(optsPath)
   load(s, configs)
-  # echo "config: ", configs
-  # echo "configs: "
+  echo "config: ", configs
+  echo "configs: "
   # print configs
   # let skips = configs.skips.toHashSet()
   for item in configs.imports:
