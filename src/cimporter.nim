@@ -183,10 +183,6 @@ proc importproject(opts: CImporterOpts,
       c2nimExtras[pf] = extras
 
   # Run C2NIM
-  # let c2nProj = (cfg.outdir/cfg.name).addFileExt(".c2nim")
-  # if not fileExists c2nProj:
-  #   let fl = open(c2nProj, fmWrite); fl.write("\n"); fl.close()
-  # var c2n = @[c2nProj.absolutePath]
   var c2n: seq[string]
   if opts.projC2Nim != "":
     c2n.insert(opts.projC2Nim, 0)
@@ -208,6 +204,11 @@ proc importproject(opts: CImporterOpts,
     cmds.add(mkC2NimCmd(pp, c2n, cfg, extraArgs))
   # echo "C2NIM CMDS: ", cmds
   run cmds
+
+  if not ccopts.skipClean:
+    for pp in ppFiles:
+      echo "removing output file: ", pp
+      pp.removeFile()
 
 
 proc runImports*(opts: var CImporterOpts) =
