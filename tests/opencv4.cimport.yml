@@ -1,0 +1,228 @@
+
+imports:
+- name: "opencv2"
+  sources: "../opencv/include/opencv2"
+  globs: ["*.hpp"]
+  includes: ["extras/fixes/", "../opencv/modules/core/include"]
+  defines: ["CV_CXX11=true"]
+  skips: ["badExample1.c", "badExample2.c"]
+
+- name: "core"
+  sources: "../opencv/modules/core/include/opencv2"
+  globs: ["*.hpp", "core/mat.hpp", "core/base.hpp", "core/types.hpp", "core/matx.hpp", "core/cvstd.hpp"]
+  includes: ["extras/fixes/", "../opencv/modules/core/include"]
+  defines: 
+  - Mat_=MatPriv
+  - CV_CXX11=true
+  - vector=CppVector
+  - CV_EXPORTS=
+  - inline= 
+  - CV_ENUM_FLAGS= 
+  - "static=\n"
+
+  cSourceModifications:
+  ### For all types ###
+  - cSourceModification: "'.hpp'"
+    substitutes:
+    - peg: "'__null'"
+      repl: "NULL"
+    - peg: "'unsigned char'"
+      repl: "uint8_t"
+
+  # Import the Base stuff
+  - cSourceModification: "'base.hpp'"
+    substitutes:
+    - peg: "'unsigned char'"
+      repl: "uint8_t"
+    
+    deletes:
+    - match: "'#define CV_Assert'"
+    - match: "'#define CV_DbgAssert(expr)'"
+    - match: "'const NormTypes normType = NORM_HAMMING'"
+    - match: "'typedef Mat MatND;'"
+    - match: "'CV_ErrorNoReturn' / 'CV_ErrorNoReturn_' / 'CV_Error'"
+    - match: "'schar'"
+
+    c2NimExtras:
+    - extraArgs:
+      - debug
+      - cppskipconverter
+      - header:"base.hpp"
+    - rawNims: |
+        import cppstl/std_string
+
+        converter fromDecomp*(x: DecompTypes): cint = x.cint
+
+
+  - cSourceModification: "'types.hpp'"
+    # substitutes:
+    # - peg: "'operator()'"
+    #   repl: "call"
+    
+    c2NimExtras:
+    - extraArgs:
+      - debug
+      fileContents: |
+        #cppskipconverter
+      rawNims: |
+        import cppstl/std_vector
+        import matx
+
+  ### Import the Matx ###
+  - cSourceModification: "'matx.hpp'"
+    substitutes:
+    - peg: "'unsigned char'"
+      repl: "uint8_t"
+    - peg: "'class Matx'$"
+      repl: "class Matx : RootObj"
+    - peg: "'inline'"
+      repl: ""
+    - peg: "'static'"
+      repl: ""
+    
+    deletes:
+    - match: "'typedef _Tp value_type'"
+    - match: "'typedef Matx<_Tp, m, n> mat_type'"
+    - match: "'typedef Matx<_Tp, shortdim, 1> diag_type'"
+    - match: "'rows = m,' / 'cols = n,' / 'channels = rows*cols'"
+    - match: "'channels = cn,'"
+    - match: "'shortdim = (m < n ? m : n)'"
+    - match: "'typedef Vec<ushort, 2> Vec2w'"
+      until: "'typedef Vec<int, 2> Vec2i'"
+    - match: "'Matx diag(const diag_type& d)' / 'typename Matx<_Tp, m, n>::diag_type Matx<_Tp, m, n>::diag'"
+    - match: "'diag_type diag() const;'"
+    - match: "'@brief  Comma-separated Matrix Initializer'"
+      until: "'};'"
+      inclusive: true
+    - match: "'@brief  Comma-separated Vec Initializer'"
+      until: "'};'"
+      inclusive: true
+    - match: "'//! @cond IGNORED'"
+      until: "'//! @endcond'"
+    - match: "'//! @cond IGNORED'"
+      until: "'//! @endcond'"
+    - match: "'Matx_AddOp);'"
+      until: "'};'"
+
+    c2NimExtras:
+    - extraArgs:
+      - debug
+      - cppskipconverter
+      fileContents: |
+        #inheritable Matx
+      rawNims: |
+        import base, types
+
+        type initializer_list[T] = object
+
+  - cSourceModification: "'core.hpp'"
+    substitutes:
+    - peg: "'public std::exception'"
+      repl: "public std::CatchableError"
+    c2NimExtras:
+    - rawNims: |
+        import cppstl/std_vector
+        import cppstl/std_string
+        import core/mat
+
+      fileContents: |
+        #def Exception CVError
+        #delete "opencv2/core/base"
+        #delete "opencv2/core/cvstd"
+        #delete "opencv2/core/traits"
+        #delete "opencv2/core/matx"
+        #delete "opencv2/core/types"
+        #delete "opencv2/core/mat"
+        #delete "opencv2/core/persistence"
+        #delete "msg"
+
+  - cSourceModification: "'cvstd.hpp'"
+    substitutes:
+    - peg: "'const void* =0'"
+      repl: "const void* = NULL"
+    deletes:
+    - match: "'difference_type'"
+
+  - cSourceModification: mat.hpp
+
+    substitutes:
+    - peg: "'ACCESS_MASK=ACCESS_RW,'"
+    - peg: "'NONE' \\s+ '= 0 << KIND_SHIFT'"
+      repl: "NONE = 0"
+    - peg: "'FIXED_TYPE = 0x8000 << KIND_SHIFT,'"
+    - peg: "'FIXED_SIZE = 0x4000 << KIND_SHIFT,'"
+    - peg: "'MAT = 1 << KIND_SHIFT'" # this causes name conflict with Mat in Nim
+      repl: "KIND_MAT = 1 << KIND_SHIFT"
+    - peg: "'MATX = 2 << KIND_SHIFT'" # this causes name conflict with Mat in Nim
+      repl: "KIND_MATX = 2 << KIND_SHIFT"
+    - peg: "'UMAT'"
+      repl: "KD_UMAT"
+    - peg: "'uchar'"
+      repl: "char"
+    - peg: "'std::shared_ptr'"
+      repl: "CppSharedPtr"
+    - peg: "'mask = _InputArray'"
+      repl: "mask = newCvInputArray"
+    - peg: "'size_t*' \\s+ {\\w+} \\s* '=' \\s* '0'"
+      repl: "size_t* $1 = NULL"
+    - peg: "'ptr'"
+      repl: "cvptr"
+    - peg: "'iterator begin();'"
+      repl: "MatIterator_<_Tp> begin();"
+    - peg: "'iterator end();'"
+      repl: "MatIterator_<_Tp> end();"
+    - peg: |
+        'void setTo(const _InputArray& value, const _InputArray & mask = _InputArray()) const;'
+      repl: |
+        void setTo(const _InputArray& value);
+        void setTo(const _InputArray& value, const _InputArray & mask);
+
+    deletes:
+    - match: "'    typedef '"
+    - match: "'Mat getMat_'"
+    - match: "'rbegin' / 'rend'"
+    - match: "'template<typename _Tp> SparseMat' ('Const')* 'Iterator_<_Tp>' \\s+ ('begin' / 'end')"
+    - match: "'cuda::GpuMat' / 'cudev::GpuMat' / 'ogl::Buffer' / 'cuda::HostMem'"
+    - match: "'getGpuMatVector' / 'getGpuMat' / 'getOGlBuffer'"
+    - match: "'getBufferPoolController'"
+    - match: "'std::initializer_list'"
+    - match: "'template' @ 'ptr(' "
+    - match: "'ptrdiff_t'"
+    - match: "'template<' \\w+ \\s+ \\w+ '>' \\w+ [*]* 'ptr'"
+    - match: "' bool operator!('" # skip lots of operators from 
+    - match: "'MatCommaInitializer_'"
+    - match: "'MatIterator_<_Tp> it'"
+    - match: "'const_iterator'"
+    - match: "'template<std::size_t _Nm> _InputArray(const std::array<Mat, _Nm>& arr);'"
+      until: "'Mat getMat(int idx=-1) const'"
+    - match: "'template<' \\w+ \\s+ \\w+ ',' \\s+ \\w+ \\s+ \\w+ '> explicit MatPriv'"
+    - match: "'_InputArray(const cuda::GpuMat& d_mat)'"
+      until: "'template<std::size_t _Nm> _InputArray(const std::array<Mat, _Nm>& arr);'"
+    - match: "'DEPTH_MASK_ALL'"
+    - match: "'fixedDepthMask=static_cast'"
+    - match: "'const _Tp* vec, int n'"
+    - match: "'DEPTH_MASK_FLT = DEPTH_MASK_32F + DEPTH_MASK_64F'"
+    - match: "'MatExpr(const MatOp* _op, int _flags'"
+      until: "'const Mat& _c = Mat(), double _alpha'"
+      inclusive: true
+    
+    ## temp remove until more imports?
+    - match: "'Mat1d' / 'Mat2d' / 'Mat3d' / 'Mat4d'"
+    - match: "'Vec'"
+
+    c2NimExtras:
+    - fileContents: |
+        #mangle "'AUTO_STEP'" "MatAUTO_STEP"
+        #inheritable _InputArray
+        #inheritable Mat
+        #inheritable SparseMat
+        #inheritable MatConstIterator
+        #inheritable SparseMatConstIterator
+      rawNims: |
+        import cppstl/std_vector
+        from cppstl/std_smartptrs import CppSharedPtr
+        import base, matx, types
+
+        proc `shl`[T](a: cint, b: T): cint = a shl b.cint
+        proc all(): Range = Range()
+  
