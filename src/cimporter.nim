@@ -163,7 +163,9 @@ proc importproject(opts: CImporterOpts,
   var ppFiles: seq[string]
   let skips = cfg.skips.toHashSet()
   for f in files:
-    let skipFile = f.relativePath(&"{cfg.sources}") in skips
+    let relFile = f.relativePath(&"{cfg.sources}")
+    if relFile in skips:
+      continue
     let mods = cfg.cSourceModifications.fileMatches(f)
     var subs: seq[(Peg, string)]
     for s in mods.mapIt(it.substitutes).concat():
@@ -175,7 +177,7 @@ proc importproject(opts: CImporterOpts,
         copyFile(f, f & ".pp")
         f & ".pp"
       else:
-        ccpreprocess(f, ccopts, subs, dels, skipFile)
+        ccpreprocess(f, ccopts, subs, dels, false)
     ppFiles.add(pf)
 
     let extras = mods.mapIt(it.c2nimExtras).concat()
