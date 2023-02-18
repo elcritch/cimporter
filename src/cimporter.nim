@@ -188,6 +188,7 @@ proc importproject(opts: CImporterOpts,
     c2n.insert(opts.projC2Nim, 0)
 
   var cmds: seq[string]
+  var c2nCleanup: seq[string]
   echo "PP FILES: ", ppFiles
   for pp in ppFiles:
     var c2n = c2n
@@ -201,6 +202,7 @@ proc importproject(opts: CImporterOpts,
       let raws = if c2rawNims.len() == 0: "" else: "#@\n" & c2rawNims & "\n@#"
       writeFile(ppC2 , c2files & raws)
       c2n.add ppC2
+      c2nCleanup.add ppC2
     cmds.add(mkC2NimCmd(pp, c2n, cfg, extraArgs))
   # echo "C2NIM CMDS: ", cmds
   run cmds
@@ -209,6 +211,9 @@ proc importproject(opts: CImporterOpts,
     for pp in ppFiles:
       echo "removing output file: ", pp
       pp.removeFile()
+    for c2n in c2nCleanup:
+      echo "removing output file: ", c2n
+      c2n.removeFile()
 
 
 proc runImports*(opts: var CImporterOpts) =
