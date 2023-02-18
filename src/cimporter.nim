@@ -224,6 +224,8 @@ proc runImports*(opts: var CImporterOpts) =
   echo "Options Path: ", optsPath 
   echo "C2Nim Path: ", opts.projC2Nim 
 
+  if not optsPath.fileExists():
+    raise newException(ValueError, "couldn't find config file: " & optsPath)
   var configs: ImporterConfig
   var s = newFileStream(optsPath)
   load(s, configs)
