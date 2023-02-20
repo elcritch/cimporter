@@ -199,7 +199,7 @@ proc importproject(opts: CImporterOpts,
 
   var cmds: seq[string]
   var c2nCleanup: seq[string]
-  echo "PP FILES: ", ppFiles
+  # echo "PP FILES: ", ppFiles
   for pp in ppFiles:
     var c2n = c2n
     let c2extras = c2NimConfigs.getOrDefault(pp, @[])
@@ -207,7 +207,7 @@ proc importproject(opts: CImporterOpts,
     let c2files = c2extras.mapIt(it.fileContents).join("")
     let c2rawNims = c2extras.mapIt(it.rawNims).join("")
     if c2files.len() > 0 or c2rawNims.len() > 0:
-      echo "EXTRA C2N: ", pp
+      # echo "EXTRA C2N: ", pp
       let ppC2 = pp.changeFileExt(".c2nim")
       let raws = if c2rawNims.len() == 0: "" else: "#@\n" & c2rawNims & "\n@#"
       writeFile(ppC2 , c2files & raws)
