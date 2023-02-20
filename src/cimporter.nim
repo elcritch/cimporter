@@ -37,6 +37,7 @@ type
     skips {.defaultVal: @[].}: seq[string]
     includes {.defaultVal: @[].}: seq[string]
     defines {.defaultVal: @[].}: seq[string]
+    renames {.defaultVal: @[].}: seq[FileNameReplace]
     outdir {.defaultVal: "".}: string
     skipProjMangle {.defaultVal: false.}: bool
     cSourceModifications {.defaultVal: @[].}: seq[CSrcMods]
@@ -56,6 +57,10 @@ type
     peg*: Peg
     repl* {.defaultVal: "".}: string
     comment* {.defaultVal: false.}: bool
+  
+  FileNameReplace* = object
+    pattern*: Peg
+    repl*: string
   
   SourceDelete* = object
     match*: Peg
@@ -104,13 +109,16 @@ proc mkC2NimCmd(file: AbsFile,
   let
     relfile = file.relativePath(cfg.sources)
     split = relfile.splitFile()
-    tgtfile = cfg.outdir / split.dir / split.name.changeFileExt("nim")
+    name = split.name.
+              parallelReplace(cfg.renames.mapIt((it.pattern, it.repl))).
+              changeFileExt("nim")
+    tgtfile = cfg.outdir / split.dir / name
     tgtParentFile = tgtfile.parentDir()
     cfgC2nim = cfg.outdir/file.extractFilename().
                 changeFileExt("c2nim")
 
   createDir(tgtParentFile)
-  let post: seq[string] = @["--debug", "--header:\"" & file.splitFile().name & "\""] # modify progs
+  let post = @["--debug", "--header:\"" & file.splitFile().name & "\""] # modify progs
   var mangles = if cfg.skipProjMangle: @[""]
                 else: projMangles(cfg.name)
   mangles.add defMangles
