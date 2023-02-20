@@ -46,9 +46,9 @@ type
     cSourceModification*: Peg
     substitutes {.defaultVal: @[].}: seq[SourceReplace]
     deletes {.defaultVal: @[].}: seq[SourceDelete]
-    c2NimExtras {.defaultVal: @[].}: seq[C2NimExtras]
+    c2NimConfigs {.defaultVal: @[].}: seq[c2NimConfigs]
 
-  C2NimExtras* = object
+  c2NimConfigs* = object
     extraArgs* {.defaultVal: @[].}: seq[string]
     fileContents* {.defaultVal: "".}: string
     rawNims* {.defaultVal: "".}: string
@@ -167,7 +167,7 @@ proc importproject(opts: CImporterOpts,
     obj.filterIt(f.endsWith(it.cSourceModification))
 
   # Run pre-processor
-  var c2nimExtras: Table[string, seq[C2NimExtras]]
+  var c2NimConfigs: Table[string, seq[c2NimConfigs]]
   var ppFiles: seq[string]
   let skips = cfg.skips.toHashSet()
   for f in files:
@@ -188,9 +188,9 @@ proc importproject(opts: CImporterOpts,
         ccpreprocess(f, ccopts, subs, dels, false)
     ppFiles.add(pf)
 
-    let extras = mods.mapIt(it.c2nimExtras).concat()
+    let extras = mods.mapIt(it.c2NimConfigs).concat()
     if extras.len() > 0:
-      c2nimExtras[pf] = extras
+      c2NimConfigs[pf] = extras
 
   # Run C2NIM
   var c2n: seq[string]
@@ -202,7 +202,7 @@ proc importproject(opts: CImporterOpts,
   echo "PP FILES: ", ppFiles
   for pp in ppFiles:
     var c2n = c2n
-    let c2extras = c2nimExtras.getOrDefault(pp, @[])
+    let c2extras = c2NimConfigs.getOrDefault(pp, @[])
     let extraArgs = c2extras.mapIt(it.extraArgs).concat().mapIt("--"&it)
     let c2files = c2extras.mapIt(it.fileContents).join("")
     let c2rawNims = c2extras.mapIt(it.rawNims).join("")
