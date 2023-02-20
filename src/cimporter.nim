@@ -40,6 +40,7 @@ type
     renames {.defaultVal: @[].}: seq[FileNameReplace]
     outdir {.defaultVal: "".}: string
     skipProjMangle {.defaultVal: false.}: bool
+    removeModulePrefixes {.defaultVal: "".}: string
     cSourceModifications {.defaultVal: @[].}: seq[CSrcMods]
   
   CSrcMods* = object
@@ -200,10 +201,15 @@ proc importproject(opts: CImporterOpts,
   var cmds: seq[string]
   var c2nCleanup: seq[string]
   # echo "PP FILES: ", ppFiles
+
   for pp in ppFiles:
     var c2n = c2n
     let c2extras = c2NimConfigs.getOrDefault(pp, @[])
-    let extraArgs = c2extras.mapIt(it.extraArgs).concat().mapIt("--"&it)
+    var extraArgs = c2extras.mapIt(it.extraArgs).concat().mapIt("--"&it)
+    if cfg.removeModulePrefixes.len() > 0:
+      let prefix = cfg.removeModulePrefixes %
+                          [pp.splitFile().name.splitFile().name]
+      extraArgs.add("--prefix:" & prefix)
     let c2files = c2extras.mapIt(it.fileContents).join("")
     let c2rawNims = c2extras.mapIt(it.rawNims).join("")
     if c2files.len() > 0 or c2rawNims.len() > 0:
