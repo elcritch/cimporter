@@ -2,6 +2,8 @@
 
 Project that wraps c2nim to automate creating bindings for larger c projects. 
 
+## Usage
+
 This works in two stages:
 1. run C preprocessor on the source files
 2. run c2nim on the processed C files
@@ -10,7 +12,7 @@ They're configured by two files that need to be placed in the root of the Nim pr
 - `<my_project>.cimport.yml`
 - `<my_project>.c2nim`
 
-## C Preprocessor Stage 
+### C Preprocessor Stage 
 
 The first stage uses the C compilers `-E` flag (for gcc/clang) to output the result of running the C processor on a source file. This has the benefit of expanding the many pesky m4 macros (C macros) that larger C projects tend to use everywhere.
 
@@ -34,12 +36,47 @@ The first is not readily parseable C without heuristic or setting up the proper 
 
 `cimporter` handles properly stripping out expanded system headers from the pre-processed C code. This tends to leave behind a much simpler C source which can be parsed often with no c2nim defines. 
 
-## c2nim stage
+### c2nim stage
 
 This runs `c2nim` on the C source files that have been pre-processed and possibly modified. `cimporter` supports a few different ways to pass arguments to `c2nim` and helps automate the process. 
 
 The primary one is a global c2nim config file `<my_project>.c2nim` which is passed to each call to c2nim. Per-file c2nim configs can be passed in the `<my_project>.cimport.yml` as well under the `c2NimConfigs` yaml field. 
 
+## Notes
+
+There's still pain points, mainly due to how different each C project can be setup. Imports are often a pain, as are the various mangles. `nep1` can be a good option. 
+
+Luckily `c2nim` has gained a number of new ways to tweak how it imports C headers that can help reduce much of the friction. 
+
+Here's a good default c2nim recipie to use:
+
+```c
+#pragma c2nim strict
+#pragma c2nim importc
+#pragma c2nim cdecl
+#pragma c2nim header
+
+#pragma c2nim reordercomments // make C comments follow Nim style (mostly)
+#pragma c2nim mergeDuplicates // merge duplicates that arise after preprocessing
+#pragma c2nim skipFuncDefines // skip function bodies on inline c functions when using cdecl
+#pragma c2nim importFuncDefines
+
+#pragma c2nim mergeblocks // helps reduce number of times when certain C types can be defined out of order
+#pragma c2nim stdints // convert modern standard int's like uint8_t, etc
+#pragma c2nim cppSkipCallOp
+#pragma c2nim cppSkipConverter
+#pragma c2nim cppskipconverter
+
+#pragma c2nim render nonNep1Imports // useful to enable using nep1 with imports -- otherwise C file names won't match
+#pragma c2nim render extranewlines
+#pragma c2nim render reindentlongcomments
+
+#pragma c2nim mangle "'va_list'" "varargs[pointer]" // convert va_list to nim's version
+#pragma c2nim mangle "'_Bool'" "bool" // how bools end up after preprocessing in clang -- should probably be handled in stdints above 
+
+#pragma c2nim delete "RCUTILS_ERROR_STATE_FILE_MAX_LENGTH" // delete annoying C arrays or other bits
+#pragma c2nim delete "'rcutils/stdatomic_helper'" // remove broken c include -> nim import mappings -- unfortunately relies on the '/' in the name
+```
 
 ## Helpers
 
