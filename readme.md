@@ -2,6 +2,8 @@
 
 Project that wraps c2nim to automate creating bindings for larger c projects. 
 
+WIP! This currently relies on a pending PR on c2nim to make it useful. Also, the `.cimport.yml` is likely to be switched to a nim script variant. However, it does alreay work pretty well. 
+
 ## Usage
 
 This works in two stages:
