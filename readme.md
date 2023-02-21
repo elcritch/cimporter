@@ -78,6 +78,14 @@ Here's a good default c2nim recipie to use:
 #pragma c2nim delete "'rcutils/stdatomic_helper'" // remove broken c include -> nim import mappings -- unfortunately relies on the '/' in the name
 ```
 
+## Note on PEGs
+
+PEGs are an alternative RegEx form that the Nim compiler uses because they're fast. However, they're fast because they don't allow ambiguous matches. 
+
+This means that a `{\\w+} '_some_suffix'` would seem like it should match a regex `(\\w+)_some_suffix` it doesn't. The reason is that `\\w+` could match `var_name_some_suffix_some_suffix`. You can often do a `{@'_some_suffix'}` which would match this sequence. Unfortunately, this breaks with short expressions like `{@'_p'}` which can be matched multiple times. 
+
+I may switch `cimporter` to use regexes, or support both. But currently PEGs work well enough.  
+
 ## Helpers
 
 Example of populating a main file with imports/exports for every module: 
