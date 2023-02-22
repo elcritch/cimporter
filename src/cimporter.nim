@@ -1,12 +1,12 @@
 import std/[os, sequtils, osproc, strutils, strformat, sets, json]
 import std/[tables, pegs]
 
-import yaml
-import yaml/parser
-import yaml/stream
-import yaml/serialization, streams
-
 import cimporter/m4parser
+import cimporter/config
+
+import nimscripter, nimscripter/variables
+import cimporter/config
+
 # import toml_serialization
 import glob
 import print
@@ -41,13 +41,6 @@ const dflOpts* = CImporterOpts(
     noDefaultFlags: false,
     ccFlag: @["-CC","-dI","-dD"]
 )
-
-proc constructObject*(
-    s: var YamlStream, c: ConstructionContext, result: var Peg) =
-  constructScalarItem(s, item, Peg):
-    let s = item.scalarContent
-    try: result = peg(s)
-    except: raise newException(YamlConstructionError, "peg: " & getCurrentExceptionMsg())
 
 proc mkCmd(bin: string, args: openArray[string]): string =
   result = bin
@@ -128,7 +121,7 @@ proc importproject(opts: CImporterOpts,
     obj.filterIt(f.endsWith(it.cSourceModification))
 
   # Run pre-processor
-  var c2NimConfigs: Table[string, seq[c2NimConfigs]]
+  var c2NimConfigs: Table[string, seq[C2NimConfigs]]
   var ppFiles: seq[string]
   let skips = cfg.skips.toHashSet()
   for f in files:
@@ -191,15 +184,14 @@ proc importproject(opts: CImporterOpts,
       echo "removing output file: ", c2n
       c2n.removeFile()
 
-import nimscripter, nimscripter/variables
-import cimporter/config
 
-proc runConfigScript*(path: string): seq[CImport] =
+proc runConfigScript*(path: string): ImporterConfig =
 
-  var cimportList = newSeq[CImport]()
-  proc addCImportConfig(cimport: CImport) = 
+  var cimportList = ImporterConfig()
+  proc addCImportConfig(cimport: ImportConfig) = 
     ## add cimport list
-    cimportList.add cimport
+    cimportList.imports.add cimport
+  
   exportTo(scriptModule,
     addCImportConfig,
   )
@@ -232,11 +224,11 @@ proc runImports*(opts: var CImporterOpts) =
 
   if not optsPath.fileExists():
     raise newException(ValueError, "couldn't find config file: " & optsPath)
-  var configs: ImporterConfig
+  # var configs: ImporterConfig
   # var s = newFileStream(optsPath)
   # load(s, configs)
-  optsPath
-  echo "config: ", configs
+  let configs = runConfigScript(optsPath)
+  # echo "config: ", $configs
   echo "configs: "
   # print configs
   # let skips = configs.skips.toHashSet()

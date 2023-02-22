@@ -3,3 +3,7 @@ author        = "Example"
 description   = "description"
 license       = "MIT"
 srcDir        = "src"
+
+# Dependencies
+
+requires "nimscripter"
