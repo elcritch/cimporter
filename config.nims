@@ -1,1 +1,3 @@
 --d:debug
+--d:strip
+--opt:size

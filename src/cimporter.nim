@@ -63,7 +63,7 @@ proc mkC2NimCmd(file: AbsFile,
   let
     relfile = file.relativePath(cfg.sources)
     split = relfile.splitFile()
-    res = cfg.renames.mapIt((peg(it.pattern), it.repl))
+    res = cfg.renames.mapIt((it.pattern, it.repl))
     name = split.name.
               parallelReplace(res).
               changeFileExt("nim")
@@ -189,9 +189,11 @@ proc importproject(opts: CImporterOpts,
 proc runConfigScript*(path: string): ImporterConfig =
 
   var cimportList = ImporterConfig()
-  proc addCImportConfig(cimport: ImportConfig) = 
+  proc addCImportConfig(buff: string) = 
     ## add cimport list
-    cimportList.imports.add cimport
+    var ic: ImportConfig
+    buff.unpack(ic)
+    cimportList.imports.add ic
   
   exportTo(scriptModule,
     addCImportConfig,
