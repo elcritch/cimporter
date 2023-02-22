@@ -231,6 +231,41 @@ proc importproject(opts: CImporterOpts,
       echo "removing output file: ", c2n
       c2n.removeFile()
 
+import nimscripter, nimscripter/variables
+import cimporter/config
+
+proc runConfigScript*() =
+
+  var cimportList = newSeq[CImport]()
+  proc addCImportConfig(cimport: CImport) = 
+    ## add cimport list
+    cimportList.add cimport
+  exportTo(scriptModule,
+    addCImportConfig,
+  )
+
+  let args = os.commandLineParams()
+
+  let
+    scriptProcs = implNimScriptModule(scriptModule)
+    intr = loadScript(
+      NimScriptPath(args[0]),
+      scriptProcs,
+      defines = @{"nimscript": "true",
+                  "nimconfig": "true",
+                  "nimscripter": "true"})
+
+  getGlobalNimsVars intr:
+    required: string # required variable
+    optional: Option[string] # optional variable
+    defaultValue: int = 1 # optional variable with default value
+    defaultValueExists = "bar" # You may omit the type if there is a default value
+
+  echo required == "main"
+  echo optional.isNone
+  echo defaultValue == 1
+  echo defaultValueExists == "foo"
+
 
 proc runImports*(opts: var CImporterOpts) =
   echo "importing..."
