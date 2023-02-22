@@ -63,8 +63,9 @@ proc mkC2NimCmd(file: AbsFile,
   let
     relfile = file.relativePath(cfg.sources)
     split = relfile.splitFile()
+    res = cfg.renames.mapIt((peg(it.pattern), it.repl))
     name = split.name.
-              parallelReplace(cfg.renames.mapIt((it.pattern, it.repl))).
+              parallelReplace(res).
               changeFileExt("nim")
     tgtfile = cfg.outdir / split.dir / name
     tgtParentFile = tgtfile.parentDir()
