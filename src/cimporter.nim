@@ -27,46 +27,6 @@ type
     noDefaultFlags: bool
     `include`: seq[string]
 
-  ImporterConfig* = object
-    imports: seq[ImportConfig]
-
-  ImportConfig* = object
-    name: string
-    sources: string
-    globs: seq[string]
-    skips {.defaultVal: @[].}: seq[string]
-    includes {.defaultVal: @[].}: seq[string]
-    defines {.defaultVal: @[].}: seq[string]
-    renames {.defaultVal: @[].}: seq[FileNameReplace]
-    outdir {.defaultVal: "".}: string
-    skipProjMangle {.defaultVal: false.}: bool
-    removeModulePrefixes {.defaultVal: "".}: string
-    cSourceModifications {.defaultVal: @[].}: seq[CSrcMods]
-  
-  CSrcMods* = object
-    cSourceModification*: Peg
-    substitutes {.defaultVal: @[].}: seq[SourceReplace]
-    deletes {.defaultVal: @[].}: seq[SourceDelete]
-    c2NimConfigs {.defaultVal: @[].}: seq[c2NimConfigs]
-
-  c2NimConfigs* = object
-    extraArgs* {.defaultVal: @[].}: seq[string]
-    fileContents* {.defaultVal: "".}: string
-    rawNims* {.defaultVal: "".}: string
-
-  SourceReplace* = object
-    peg*: Peg
-    repl* {.defaultVal: "".}: string
-    comment* {.defaultVal: false.}: bool
-  
-  FileNameReplace* = object
-    pattern*: Peg
-    repl*: string
-  
-  SourceDelete* = object
-    match*: Peg
-    until* {.defaultVal: Peg.none.}: Option[Peg]
-    inclusive* {.defaultVal: false.}: bool
 
 const defMangles = @[
   # handle expanded null pointers
@@ -234,7 +194,7 @@ proc importproject(opts: CImporterOpts,
 import nimscripter, nimscripter/variables
 import cimporter/config
 
-proc runConfigScript*() =
+proc runConfigScript*(path: string): seq[CImport] =
 
   var cimportList = newSeq[CImport]()
   proc addCImportConfig(cimport: CImport) = 
@@ -244,27 +204,16 @@ proc runConfigScript*() =
     addCImportConfig,
   )
 
-  let args = os.commandLineParams()
-
   let
     scriptProcs = implNimScriptModule(scriptModule)
     intr = loadScript(
-      NimScriptPath(args[0]),
+      NimScriptPath(path),
       scriptProcs,
       defines = @{"nimscript": "true",
                   "nimconfig": "true",
                   "nimscripter": "true"})
-
-  getGlobalNimsVars intr:
-    required: string # required variable
-    optional: Option[string] # optional variable
-    defaultValue: int = 1 # optional variable with default value
-    defaultValueExists = "bar" # You may omit the type if there is a default value
-
-  echo required == "main"
-  echo optional.isNone
-  echo defaultValue == 1
-  echo defaultValueExists == "foo"
+  
+  result = cimportList
 
 
 proc runImports*(opts: var CImporterOpts) =
@@ -272,7 +221,8 @@ proc runImports*(opts: var CImporterOpts) =
   opts.proj = opts.proj.absolutePath().AbsDir
   if opts.projName == "":
     opts.projName = opts.proj.lastPathPart()
-  let optsPath = opts.proj / opts.projName & ".cimport.yml"
+  # let optsPath = opts.proj / opts.projName & ".cimport.yml"
+  let optsPath = opts.proj / opts.projName & "_cimport.nim"
   if opts.projC2Nim == "":
     opts.projC2Nim = opts.proj / opts.projName & ".c2nim"
   if not opts.projC2Nim.fileExists():
@@ -283,8 +233,9 @@ proc runImports*(opts: var CImporterOpts) =
   if not optsPath.fileExists():
     raise newException(ValueError, "couldn't find config file: " & optsPath)
   var configs: ImporterConfig
-  var s = newFileStream(optsPath)
-  load(s, configs)
+  # var s = newFileStream(optsPath)
+  # load(s, configs)
+  optsPath
   echo "config: ", configs
   echo "configs: "
   # print configs
