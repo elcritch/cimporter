@@ -191,28 +191,39 @@ proc importproject(opts: CImporterOpts,
       echo "removing output file: ", c2n
       c2n.removeFile()
 
+import compiler/[ast]
+
+# proc toVm*[T: Peg](a: T): PNode = newStrNode(nkStrLit, a)
+
+proc fromVm*(t: typedesc[Peg], node: PNode): Peg =
+  if node.kind == nkStrLit:
+    peg(node.strVal)
+  else:
+    raise newException(VMParseError, "Cannot convert to: " & $t)
 
 proc runConfigScript*(path: string): ImporterConfig =
 
-  var cimportList = ImporterConfig()
-  proc addCImportConfig(config: ImportConfig) = 
-    ## add cimport list
-    cimportList.imports.add config
+  # var cimportList = ImporterConfig()
+  # proc addCImportConfig(config: ImportConfig) = 
+  #   ## add cimport list
+  #   cimportList.imports.add config
   
-  exportTo(scriptModule,
-    addCImportConfig,
-  )
+  # exportTo(scriptModule,
+  #   addCImportConfig,
+  # )
+
 
   let
-    scriptProcs = implNimScriptModule(scriptModule)
+    # scriptProcs = implNimScriptModule(scriptModule)
     intr = loadScript(
       NimScriptPath(path),
-      scriptProcs,
-      stdPath = "stdlib/",
+      # stdPath = "stdlib/",
       defines = @{"nimscript": "true",
                   "nimconfig": "true",
                   "nimscripter": "true"})
   
+  getGlobalNimsVars intr:
+    cimportList = ImporterConfig()
   result = cimportList
 
 

@@ -1,4 +1,8 @@
-import cimporter/configure
+import ../src/cimporter/configure
+
+echo "hi"
+
+# var cimportList = ImporterConfig()
 
 cimport:
   name: "rcutils"
