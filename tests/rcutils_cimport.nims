@@ -1,4 +1,4 @@
-import ../src/cimporter/configure
+import cimporter/configure
 
 # var cimportList = ImporterConfig()
 

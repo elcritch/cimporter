@@ -207,6 +207,7 @@ proc runConfigScript*(path: string): ImporterConfig =
     intr = loadScript(
       NimScriptPath(path),
       # stdPath = "stdlib/",
+      searchPaths = @["src"],
       defines = @{"nimscript": "true",
                   "nimconfig": "true",
                   "nimscripter": "true"})
