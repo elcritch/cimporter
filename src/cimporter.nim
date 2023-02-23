@@ -62,7 +62,7 @@ proc mkC2NimCmd(file: AbsFile,
   let
     relfile = file.relativePath(cfg.sources)
     split = relfile.splitFile()
-    res = cfg.renames.mapIt((it.pattern, it.repl))
+    res = cfg.renameFiles.mapIt((it.pattern, it.repl))
     name = split.name.
               parallelReplace(res).
               changeFileExt("nim")
@@ -123,7 +123,7 @@ proc importproject(opts: CImporterOpts,
   # Run pre-processor
   var c2NimConfigs: Table[string, seq[C2NimConfigs]]
   var ppFiles: seq[string]
-  let skips = cfg.skips.toHashSet()
+  let skips = cfg.skipFiles.toHashSet()
   for f in files:
     let relFile = f.relativePath(&"{cfg.sources}")
     if relFile in skips:

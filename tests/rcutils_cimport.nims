@@ -1,7 +1,5 @@
 import ../src/cimporter/configure
 
-echo "hi"
-
 # var cimportList = ImporterConfig()
 
 cimport:
