@@ -2,10 +2,9 @@ import std/[os, sequtils, osproc, strutils, strformat, sets, json]
 import std/[tables, pegs]
 
 import cimporter/m4parser
-import cimporter/config
+import cimporter/configure
 
 import nimscripter, nimscripter/variables
-import cimporter/config
 
 # import toml_serialization
 import glob
@@ -189,11 +188,9 @@ proc importproject(opts: CImporterOpts,
 proc runConfigScript*(path: string): ImporterConfig =
 
   var cimportList = ImporterConfig()
-  proc addCImportConfig(buff: string) = 
+  proc addCImportConfig(config: ImportConfig) = 
     ## add cimport list
-    var ic: ImportConfig
-    buff.unpack(ic)
-    cimportList.imports.add ic
+    cimportList.imports.add config
   
   exportTo(scriptModule,
     addCImportConfig,
@@ -204,6 +201,7 @@ proc runConfigScript*(path: string): ImporterConfig =
     intr = loadScript(
       NimScriptPath(path),
       scriptProcs,
+      stdPath = "stdlib/",
       defines = @{"nimscript": "true",
                   "nimconfig": "true",
                   "nimscripter": "true"})
@@ -217,7 +215,7 @@ proc runImports*(opts: var CImporterOpts) =
   if opts.projName == "":
     opts.projName = opts.proj.lastPathPart()
   # let optsPath = opts.proj / opts.projName & ".cimport.yml"
-  let optsPath = opts.proj / opts.projName & "_cimport.nim"
+  let optsPath = opts.proj / opts.projName & "_cimport.nims"
   if opts.projC2Nim == "":
     opts.projC2Nim = opts.proj / opts.projName & ".c2nim"
   if not opts.projC2Nim.fileExists():

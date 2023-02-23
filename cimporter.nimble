@@ -6,6 +6,7 @@ description   = "Import C projects using c2nim"
 license       = "MIT"
 srcDir        = "src"
 bin           = @["cimporter"]
+installExt = @["nim"]
 
 # Dependencies
 
