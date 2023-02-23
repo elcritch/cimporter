@@ -131,8 +131,8 @@ proc importproject(opts: CImporterOpts,
     let mods = cfg.cSourceModifications.fileMatches(f)
     var subs: seq[(Peg, string)]
     for s in mods.mapIt(it.substitutes).concat():
-      if s.comment: subs.add((s.peg, "// !!!ignoring!!! $1"))
-      else: subs.add((s.peg, s.repl))
+      if s.comment: subs.add((s.pattern, "// !!!ignoring!!! $1"))
+      else: subs.add((s.pattern, s.repl))
     
     var dels: seq[(Peg, (Option[Peg], bool))]
     for it in mods.mapIt(it.deletes).concat:
