@@ -12,11 +12,14 @@ cimport:
     "rcutils/stdatomic_helper.h"
   renameFiles:list:
     Replace(pattern: peg"^'string.' .+", repl: "rstring$1")
-  renameFiles:listOf(Replace):
+  renameFiles:listOf Replace:
     (pattern: peg"^'string.' .+", repl: "rstring$1")
     (pattern: peg"^'strings.' .+", repl: "rstrings$1")
 
   includes:list:
     "deps/rcutils/include"
 
+  sourceMods:list:
+    item CSrcMods:
+      cSourceModification: peg"'rcutils/visibility_control.h'"
   echo "config: ", config
