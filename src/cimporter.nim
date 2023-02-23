@@ -133,13 +133,20 @@ proc importproject(opts: CImporterOpts,
     for s in mods.mapIt(it.substitutes).concat():
       if s.comment: subs.add((s.peg, "// !!!ignoring!!! $1"))
       else: subs.add((s.peg, s.repl))
-    let dels = mods.mapIt(it.deletes.mapIt((it.match, (it.until, it.inclusive)))).concat()
-    let pf = 
-      if opts.skipPreprocess:
-        copyFile(f, f & ".pp")
-        f & ".pp"
+    
+    var dels: seq[(Peg, (Option[Peg], bool))]
+    for it in mods.mapIt(it.deletes).concat:
+      # hack for lack of option type
+      if $it.until == "":
+        dels.add( (it.match, (Peg.none, it.inclusive)) )
       else:
-        ccpreprocess(f, ccopts, subs, dels, false)
+        dels.add( (it.match, (it.until.some, it.inclusive)) )
+    let
+      pf = if opts.skipPreprocess:
+              copyFile(f, f & ".pp")
+              f & ".pp"
+            else:
+              ccpreprocess(f, ccopts, subs, dels, false)
     ppFiles.add(pf)
 
     let extras = mods.mapIt(it.c2NimConfigs).concat()
