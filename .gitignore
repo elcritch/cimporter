@@ -3,3 +3,4 @@ src/cimporter/m4parser
 src/cimporter.out
 cimporter
 *.pre
+tests/rcutils_cimport
