@@ -194,7 +194,6 @@ proc importproject(opts: CImporterOpts,
 import compiler/[ast]
 
 # proc toVm*[T: Peg](a: T): PNode = newStrNode(nkStrLit, a)
-
 proc fromVm*(t: typedesc[Peg], node: PNode): Peg =
   if node.kind == nkStrLit:
     peg(node.strVal)
@@ -202,16 +201,6 @@ proc fromVm*(t: typedesc[Peg], node: PNode): Peg =
     raise newException(VMParseError, "Cannot convert to: " & $t)
 
 proc runConfigScript*(path: string): ImporterConfig =
-
-  # var cimportList = ImporterConfig()
-  # proc addCImportConfig(config: ImportConfig) = 
-  #   ## add cimport list
-  #   cimportList.imports.add config
-  
-  # exportTo(scriptModule,
-  #   addCImportConfig,
-  # )
-
 
   let
     # scriptProcs = implNimScriptModule(scriptModule)
