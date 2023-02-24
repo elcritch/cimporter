@@ -1,5 +1,7 @@
 import cimporter/configure
 
+helper(CSrcMods, "ccmods")
+
 cimport:
   name: "rcutils"
   sources: "deps/rcutils/include"
@@ -16,7 +18,7 @@ cimport:
   renameFiles:listOf Replace:
     (pattern: peg"^'string.' .+", repl: "rstring$1")
   renameFiles:list:
-    fields Replace:
+    item Replace:
       pattern: peg"^'string.' .+"
       repl: "rstring$1"
 
@@ -29,7 +31,7 @@ cimport:
     cmods:
       fileMatch: peg"'rcutils/error_handling.h'"
       deletes:list:
-        fields LineDelete:
+        item LineDelete:
           match: peg"'make sure our math is right'"
           until: peg"'Maximum length calculations incorrect'"
           inclusive: true
@@ -44,14 +46,14 @@ cimport:
     cmods:
       fileMatch: peg"'rcutils/testing/fault_injection.h'"
       C2NimConfig:list:
-        fields C2NimConfig:
+        item C2NimConfig:
           fileContents: """
             #mangle "'_rcutils_fault_injection_maybe_fail'" "rcutils_fault_injection_maybe_fail"
             """
     cmods:
       fileMatch: peg"'rcutils/types/' !'rcutils_ret' .+"
       C2NimConfig:list:
-        fields C2NimConfig:
+        item C2NimConfig:
           fileContents: """
             #skipInclude
             """
@@ -62,11 +64,11 @@ cimport:
     cmods:
       fileMatch: peg"'rcutils/testing/fault_injection.h'"
       C2NimConfig:list:
-        fields C2NimConfig:
+        item C2NimConfig:
           fileContents: """
             #skipInclude
             """
-    cmods:
+    ccmods:
       fileMatch: peg"'rcutils/types/array_list.h'"
       substitutes:list:
         item Replace:
@@ -82,12 +84,10 @@ cimport:
               } rcutils_array_list_impl_t;
               """
         item Replace:
-          pattern: "'rcutils_array_list_impl_s'"
+          pattern: peg"'rcutils_array_list_impl_s'"
           repl: "rcutils_array_list_impl_t"
+    cmods:
+      fileMatch: peg"'test'"
+      
 
   echo "config: ", config
-
-let x = item CSrcMods:
-  pattern: peg"'rcutils_array_list_impl_s'"
-  repl: "rcutils_array_list_impl_t"
-echo "x: ", typeof(x)
