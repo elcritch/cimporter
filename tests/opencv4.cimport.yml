@@ -20,9 +20,9 @@ imports:
   - CV_ENUM_FLAGS= 
   - "static=\n"
 
-  files:
+  fileMatchs:
   ### For all types ###
-  - file: "'.hpp'"
+  - fileMatch: "'.hpp'"
     substitutes:
     - peg: "'__null'"
       repl: "NULL"
@@ -30,7 +30,7 @@ imports:
       repl: "uint8_t"
 
   # Import the Base stuff
-  - file: "'base.hpp'"
+  - fileMatch: "'base.hpp'"
     substitutes:
     - peg: "'unsigned char'"
       repl: "uint8_t"
@@ -54,7 +54,7 @@ imports:
         converter fromDecomp*(x: DecompTypes): cint = x.cint
 
 
-  - file: "'types.hpp'"
+  - fileMatch: "'types.hpp'"
     # substitutes:
     # - peg: "'operator()'"
     #   repl: "call"
@@ -69,7 +69,7 @@ imports:
         import matx
 
   ### Import the Matx ###
-  - file: "'matx.hpp'"
+  - fileMatch: "'matx.hpp'"
     substitutes:
     - peg: "'unsigned char'"
       repl: "uint8_t"
@@ -115,7 +115,7 @@ imports:
 
         type initializer_list[T] = object
 
-  - file: "'core.hpp'"
+  - fileMatch: "'core.hpp'"
     substitutes:
     - peg: "'public std::exception'"
       repl: "public std::CatchableError"
@@ -136,14 +136,14 @@ imports:
         #delete "opencv2/core/persistence"
         #delete "msg"
 
-  - file: "'cvstd.hpp'"
+  - fileMatch: "'cvstd.hpp'"
     substitutes:
     - peg: "'const void* =0'"
       repl: "const void* = NULL"
     deletes:
     - match: "'difference_type'"
 
-  - file: mat.hpp
+  - fileMatch: mat.hpp
 
     substitutes:
     - peg: "'ACCESS_MASK=ACCESS_RW,'"

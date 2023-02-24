@@ -7,9 +7,9 @@ imports:
     skips:
     - badExample1.c
     - badExample2.c
-    files:
+    fileMatchs:
     - !n!custom:CSrcMods
-      file: "subexample.h"
+      fileMatch: "subexample.h"
       substitutes:
       - peg: "'int unix = 0'"
         repl: "int unix = 2"

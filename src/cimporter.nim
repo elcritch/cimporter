@@ -118,7 +118,7 @@ proc importproject(opts: CImporterOpts,
   ccopts.defines.add cfg.defines
 
   template fileMatches(obj: untyped, f: string): auto =
-    obj.filterIt(f.endsWith(it.file))
+    obj.filterIt(f.endsWith(it.fileMatch))
 
   # Run pre-processor
   var c2NimConfigs: Table[string, seq[C2NimConfigs]]
@@ -128,7 +128,7 @@ proc importproject(opts: CImporterOpts,
     let relFile = f.relativePath(&"{cfg.sources}")
     if relFile in skips:
       continue
-    let mods = cfg.files.fileMatches(f)
+    let mods = cfg.fileMatchs.fileMatches(f)
     var subs: seq[(Peg, string)]
     for s in mods.mapIt(it.substitutes).concat():
       if s.comment: subs.add((s.pattern, "// !!!ignoring!!! $1"))
