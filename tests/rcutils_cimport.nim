@@ -1,7 +1,5 @@
 import cimporter/configure
 
-configHelper(ImportConfig, "cimport")
-configHelper(CSrcMods, "cmods")
 
 addConfig:cimport:
   name: "rcutils"
