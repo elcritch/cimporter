@@ -69,7 +69,7 @@ cimport:
     cmods:
       fileMatch: peg"'rcutils/types/array_list.h'"
       substitutes:list:
-        fields Replace:
+        item Replace:
           pattern: peg"'struct rcutils_array_list_impl_s;'"
           repl: """
               typedef struct rcutils_array_list_impl_s
@@ -81,8 +81,13 @@ cimport:
                 rcutils_allocator_t allocator;
               } rcutils_array_list_impl_t;
               """
-        fields Replace:
-          pattern: peg"'rcutils_array_list_impl_s'"
+        item Replace:
+          pattern: "'rcutils_array_list_impl_s'"
           repl: "rcutils_array_list_impl_t"
 
   echo "config: ", config
+
+let x = item CSrcMods:
+  pattern: peg"'rcutils_array_list_impl_s'"
+  repl: "rcutils_array_list_impl_t"
+echo "x: ", typeof(x)
