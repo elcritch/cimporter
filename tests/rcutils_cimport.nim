@@ -43,14 +43,14 @@ addConfig:cimport:
         LineDelete(match: peg"'__STDC_WANT_LIB_EXT1__'")
     cmods:
       fileMatch: peg"'rcutils/testing/fault_injection.h'"
-      C2NimConfig:list:
+      c2NimConfig:list:
         item C2NimConfig:
           fileContents: """
             #mangle "'_rcutils_fault_injection_maybe_fail'" "rcutils_fault_injection_maybe_fail"
             """
     cmods:
       fileMatch: peg"'rcutils/types/' !'rcutils_ret' .+"
-      C2NimConfig:list:
+      c2NimConfig:list:
         item C2NimConfig:
           fileContents: """
             #skipInclude
@@ -61,7 +61,7 @@ addConfig:cimport:
             """
     cmods:
       fileMatch: peg"'rcutils/testing/fault_injection.h'"
-      C2NimConfig:list:
+      c2NimConfig:list:
         item C2NimConfig:
           fileContents: """
             #skipInclude
@@ -86,6 +86,38 @@ addConfig:cimport:
           repl: "rcutils_array_list_impl_t"
     cmods:
       fileMatch: peg"'test'"
+      substitutes:list:
+        item Replace:
+          pattern: peg"'rcutils_array_list_impl_s'"
+          repl: "rcutils_array_list_impl_t"
+
+    cmods:
+      fileMatch: peg"'rcutils/types/hash_map.h'"
+      substitutes:list:
+        item Replace:
+          pattern: peg"'rcutils_hash_map_impl_s'"
+          repl: "rcutils_hash_map_impl_t"
+        item Replace:
+          pattern: peg"'struct rcutils_hash_map_impl_s;'"
+          repl: """
+            typedef struct rcutils_hash_map_impl_s
+            {
+              // This is the array of buckets that will store the keypairs
+              rcutils_array_list_t * map;
+              size_t capacity;
+              size_t size;
+              size_t key_size;
+              size_t data_size;
+              rcutils_hash_map_key_hasher_t key_hashing_func;
+              rcutils_hash_map_key_cmp_t key_cmp_func;
+              rcutils_allocator_t allocator;
+            } rcutils_hash_map_impl_t;
+            """
+      c2NimConfig:list:
+        c2nims:
+          rawNims: """
+            import array_list
+            """
 
 import json
 proc `%`(n: Peg): JsonNode = %($n)

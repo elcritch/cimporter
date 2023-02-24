@@ -45,7 +45,7 @@ imports:
         #skipInclude
   - fileMatch: "'rcutils/types/array_list.h'"
     substitutes:
-    - peg: "'struct rcutils_array_list_impl_s;'"
+    - pattern: "'struct rcutils_array_list_impl_s;'"
       repl: |
           typedef struct rcutils_array_list_impl_s
           {
@@ -55,14 +55,14 @@ imports:
             size_t data_size;
             rcutils_allocator_t allocator;
           } rcutils_array_list_impl_t;
-    - peg: "'rcutils_array_list_impl_s'"
+    - pattern: "'rcutils_array_list_impl_s'"
       repl: "rcutils_array_list_impl_t"
 
   - fileMatch: "'rcutils/types/hash_map.h'"
     substitutes:
-    - peg: "'rcutils_hash_map_impl_s'"
+    - pattern: "'rcutils_hash_map_impl_s'"
       repl: "rcutils_hash_map_impl_t"
-    - peg: "'struct rcutils_hash_map_impl_s;'"
+    - pattern: "'struct rcutils_hash_map_impl_s;'"
       repl: |
         typedef struct rcutils_hash_map_impl_s
         {
@@ -81,9 +81,9 @@ imports:
         import array_list
   - fileMatch: "'rcutils/types/string_map.h'"
     substitutes:
-    - peg: "'rcutils_string_map_impl_s'"
+    - pattern: "'rcutils_string_map_impl_s'"
       repl: "rcutils_string_map_impl_t"
-    - peg: "'struct rcutils_string_map_impl_s;'"
+    - pattern: "'struct rcutils_string_map_impl_s;'"
       repl: |
         typedef struct rcutils_string_map_impl_s
         {
@@ -116,5 +116,5 @@ imports:
     deletes:
     - match: "'RCUTILS_STEADY_TIME'"
     substitutes:
-    - peg: "'va_list' \\s+ '*'"
+    - pattern: "'va_list' \\s+ '*'"
       repl: "va_list"
