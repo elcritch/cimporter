@@ -143,6 +143,33 @@ addConfig:cimport:
             import ../allocator
             import ../types/array_list
             """
+    cmods:
+      fileMatch: peg"'rcutils/logging.h'"
+      deletes:list:
+        LineDelete(match: peg"'RCUTILS_LOGGING_AUTOINIT'")
+        LineDelete(match: peg"'RCUTILS_DEFAULT_LOGGER_DEFAULT_LEVEL'")
+        LineDelete(match: peg"'g_rcutils_log_severity_names'")
+      c2NimConfig:list:
+        c2nims:
+          rawNims: """
+            import ./time
+            proc RCUTILS_LOGGING_AUTOINIT*() {.importc: "RCUTILS_LOGGING_AUTOINIT", header: "rcutils/logging.h".}
+            """
+    cmods:
+      fileMatch: peg"'rcutils/isalnum_no_locale.h'"
+      c2NimConfig:list:
+        c2nims:
+          rawNims: """
+            converter charToNum*(c: char): int = c.int 
+            """
+    cmods:
+      fileMatch: peg"'.h'"
+      deletes:list:
+        LineDelete(match: peg"'RCUTILS_STEADY_TIME'")
+      substitutes:list:
+        replaces:
+          pattern: peg"'va_list' \\s+ '*'"
+          repl: "va_list"
 
 
 import json
