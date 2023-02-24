@@ -1,6 +1,5 @@
 import cimporter/configure
 
-
 addConfig:cimport:
   name: "rcutils"
   sources: "deps/rcutils/include"
@@ -88,8 +87,7 @@ addConfig:cimport:
     cmods:
       fileMatch: peg"'test'"
 
-  echo "\nconfigs:"
-  for n, v in config.fieldPairs:
-    echo n, " => "
-    for m, u in config.fieldPairs:
-      echo "  ", m, ".", n, " => ", u
+import json
+proc `%`(n: Peg): JsonNode = %($n)
+let res = % configs
+echo res.pretty()
