@@ -30,7 +30,12 @@ cimport:
       deletes:list:
         LineDelete(match: peg"'RCUTILS_PUBLIC'")
         LineDelete(match: peg"'RCUTILS_PUBLIC_TYPE'")
-    item CSrcMods:
-      fileMatch: peg"'rcutils/visibility_control.h'"
+    cmods:
+      fileMatch: peg"'rcutils/error_handling.h'"
+      deletes:list:
+        item LineDelete:
+          match: peg"'make sure our math is right'"
+          until: peg"'Maximum length calculations incorrect'"
+          inclusive: true
 
   echo "config: ", config
