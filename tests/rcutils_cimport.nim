@@ -52,5 +52,41 @@ cimport:
           fileContents: """
             #mangle "'_rcutils_fault_injection_maybe_fail'" "rcutils_fault_injection_maybe_fail"
             """
+    cmods:
+      fileMatch: peg"'rcutils/types/' !'rcutils_ret' .+"
+      C2NimConfig:list:
+        item C2NimConfig:
+          fileContents: """
+            #skipInclude
+            """
+          rawNims:"""
+            import rcutils_ret
+            import ../allocator
+            """
+    cmods:
+      fileMatch: peg"'rcutils/testing/fault_injection.h'"
+      C2NimConfig:list:
+        item C2NimConfig:
+          fileContents: """
+            #skipInclude
+            """
+    cmods:
+      fileMatch: peg"'rcutils/types/array_list.h'"
+      substitutes:list:
+        item Replace:
+          pattern: peg"'struct rcutils_array_list_impl_s;'"
+          repl: """
+              typedef struct rcutils_array_list_impl_s
+              {
+                size_t size;
+                size_t capacity;
+                void * list;
+                size_t data_size;
+                rcutils_allocator_t allocator;
+              } rcutils_array_list_impl_t;
+              """
+        item Replace:
+          pattern: peg"'rcutils_array_list_impl_s'"
+          repl: "rcutils_array_list_impl_t"
 
   echo "config: ", config
