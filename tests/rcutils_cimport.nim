@@ -86,8 +86,8 @@ cimport:
         item Replace:
           pattern: peg"'rcutils_array_list_impl_s'"
           repl: "rcutils_array_list_impl_t"
-    cmods:
+    ccmods:
       fileMatch: peg"'test'"
-      
+
 
   echo "config: ", config
