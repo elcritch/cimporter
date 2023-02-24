@@ -42,7 +42,7 @@ The first is not readily parseable C without heuristic or setting up the proper 
 
 This runs `c2nim` on the C source files that have been pre-processed and possibly modified. `cimporter` supports a few different ways to pass arguments to `c2nim` and helps automate the process. 
 
-The primary one is a global c2nim config file `<my_project>.c2nim` which is passed to each call to c2nim. Per-file c2nim configs can be passed in the `<my_project>.cimport.yml` as well under the `c2NimConfigs` yaml field. 
+The primary one is a global c2nim config file `<my_project>.c2nim` which is passed to each call to c2nim. Per-file c2nim configs can be passed in the `<my_project>.cimport.yml` as well under the `C2NimConfig` yaml field. 
 
 ## Notes
 

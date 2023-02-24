@@ -29,18 +29,18 @@ imports:
     deletes:
     - match: "'__STDC_WANT_LIB_EXT1__'"
   - fileMatch: "'rcutils/testing/fault_injection.h'"
-    c2NimConfigs:
+    C2NimConfig:
     - fileContents: |
         #mangle "'_rcutils_fault_injection_maybe_fail'" "rcutils_fault_injection_maybe_fail"
   - fileMatch: "'rcutils/types/' !'rcutils_ret' .+"
-    c2NimConfigs:
+    C2NimConfig:
     - fileContents: |
         #skipInclude
       rawNims: |
         import rcutils_ret
         import ../allocator
   - fileMatch: "'rcutils/testing/fault_injection.h'"
-    c2NimConfigs:
+    C2NimConfig:
     - fileContents: |
         #skipInclude
   - fileMatch: "'rcutils/types/array_list.h'"
@@ -76,7 +76,7 @@ imports:
           rcutils_hash_map_key_cmp_t key_cmp_func;
           rcutils_allocator_t allocator;
         } rcutils_hash_map_impl_t;
-    c2NimConfigs:
+    C2NimConfig:
     - rawNims: |
         import array_list
   - fileMatch: "'rcutils/types/string_map.h'"
@@ -93,7 +93,7 @@ imports:
           size_t size;
           rcutils_allocator_t allocator;
         } rcutils_string_map_impl_t;
-    c2NimConfigs:
+    C2NimConfig:
     - rawNims: |
         import ../allocator
         import ../types/array_list
@@ -103,12 +103,12 @@ imports:
     - match: "'RCUTILS_LOGGING_AUTOINIT'"
     - match: "'RCUTILS_DEFAULT_LOGGER_DEFAULT_LEVEL'"
     - match: "'g_rcutils_log_severity_names'"
-    c2NimConfigs:
+    C2NimConfig:
     - rawNims: |
         import ./time
         proc RCUTILS_LOGGING_AUTOINIT*() {.importc: "RCUTILS_LOGGING_AUTOINIT", header: "rcutils/logging.h".}
   - fileMatch: "'rcutils/isalnum_no_locale.h'"
-    c2NimConfigs:
+    C2NimConfig:
     - rawNims: |
         converter charToNum*(c: char): int = c.int 
 
