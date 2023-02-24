@@ -1,8 +1,9 @@
 import cimporter/configure
 
-helper(CSrcMods, "cmods")
+configHelper(ImportConfig, "cimport")
+configHelper(CSrcMods, "cmods")
 
-cimport:
+addConfig:cimport:
   name: "rcutils"
   sources: "deps/rcutils/include"
   globs: ["**/*.h"]
@@ -89,5 +90,8 @@ cimport:
     cmods:
       fileMatch: peg"'test'"
 
-
-  echo "config: ", config
+  echo "\nconfigs:"
+  for n, v in config.fieldPairs:
+    echo n, " => "
+    for m, u in config.fieldPairs:
+      echo "  ", m, ".", n, " => ", u
