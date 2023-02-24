@@ -1,6 +1,6 @@
 import cimporter/configure
 
-helper(CSrcMods, "ccmods")
+helper(CSrcMods, "cmods")
 
 cimport:
   name: "rcutils"
@@ -68,7 +68,7 @@ cimport:
           fileContents: """
             #skipInclude
             """
-    ccmods:
+    cmods:
       fileMatch: peg"'rcutils/types/array_list.h'"
       substitutes:list:
         item Replace:
@@ -86,7 +86,7 @@ cimport:
         item Replace:
           pattern: peg"'rcutils_array_list_impl_s'"
           repl: "rcutils_array_list_impl_t"
-    ccmods:
+    cmods:
       fileMatch: peg"'test'"
 
 
