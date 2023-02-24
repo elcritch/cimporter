@@ -223,7 +223,7 @@ proc runImports*(opts: var CImporterOpts) =
   if opts.projName == "":
     opts.projName = opts.proj.lastPathPart()
   # let optsPath = opts.proj / opts.projName & ".cimport.yml"
-  let optsPath = opts.proj / opts.projName & "_cimport.nims"
+  let optsPath = opts.proj / opts.projName & "_cimport.nim"
   if opts.projC2Nim == "":
     opts.projC2Nim = opts.proj / opts.projName & ".c2nim"
   if not opts.projC2Nim.fileExists():
