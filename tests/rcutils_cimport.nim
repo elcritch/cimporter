@@ -118,6 +118,32 @@ addConfig:cimport:
           rawNims: """
             import array_list
             """
+    cmods:
+      fileMatch: peg"'rcutils/types/string_map.h'"
+      substitutes:list:
+        item Replace:
+          pattern: peg"'rcutils_string_map_impl_s'"
+          repl: "rcutils_string_map_impl_t"
+        item Replace:
+          pattern: peg"'struct rcutils_string_map_impl_s;'"
+          repl:
+            """
+            typedef struct rcutils_string_map_impl_s
+            {
+              char ** keys;
+              char ** values;
+              size_t capacity;
+              size_t size;
+              rcutils_allocator_t allocator;
+            } rcutils_string_map_impl_t;
+            """
+      c2NimConfig:list:
+        c2nims:
+          rawNims: """
+            import ../allocator
+            import ../types/array_list
+            """
+
 
 import json
 proc `%`(n: Peg): JsonNode = %($n)
