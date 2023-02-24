@@ -12,38 +12,38 @@ imports:
   - "deps/rcutils/include"
   # removeModulePrefixes: "rcutils_$1_"
 
-  cSourceModifications:
-  - cSourceModification: "'rcutils/visibility_control.h'"
+  files:
+  - file: "'rcutils/visibility_control.h'"
     deletes:
     - match: "'RCUTILS_PUBLIC'"
     - match: "'RCUTILS_PUBLIC_TYPE'"
-  - cSourceModification: "'rcutils/error_handling.h'"
+  - file: "'rcutils/error_handling.h'"
     deletes:
     - match: "'make sure our math is right'"
       until: "'Maximum length calculations incorrect'"
       inclusive: true
-  - cSourceModification: "'rcutils/macros.h'"
+  - file: "'rcutils/macros.h'"
     deletes:
     - match: "'RCUTILS_THREAD_LOCAL'"
-  - cSourceModification: "'rcutils/error_handling.h'"
+  - file: "'rcutils/error_handling.h'"
     deletes:
     - match: "'__STDC_WANT_LIB_EXT1__'"
-  - cSourceModification: "'rcutils/testing/fault_injection.h'"
+  - file: "'rcutils/testing/fault_injection.h'"
     c2NimConfigs:
     - fileContents: |
         #mangle "'_rcutils_fault_injection_maybe_fail'" "rcutils_fault_injection_maybe_fail"
-  - cSourceModification: "'rcutils/types/' !'rcutils_ret' .+"
+  - file: "'rcutils/types/' !'rcutils_ret' .+"
     c2NimConfigs:
     - fileContents: |
         #skipInclude
       rawNims: |
         import rcutils_ret
         import ../allocator
-  - cSourceModification: "'rcutils/testing/fault_injection.h'"
+  - file: "'rcutils/testing/fault_injection.h'"
     c2NimConfigs:
     - fileContents: |
         #skipInclude
-  - cSourceModification: "'rcutils/types/array_list.h'"
+  - file: "'rcutils/types/array_list.h'"
     substitutes:
     - peg: "'struct rcutils_array_list_impl_s;'"
       repl: |
@@ -58,7 +58,7 @@ imports:
     - peg: "'rcutils_array_list_impl_s'"
       repl: "rcutils_array_list_impl_t"
 
-  - cSourceModification: "'rcutils/types/hash_map.h'"
+  - file: "'rcutils/types/hash_map.h'"
     substitutes:
     - peg: "'rcutils_hash_map_impl_s'"
       repl: "rcutils_hash_map_impl_t"
@@ -79,7 +79,7 @@ imports:
     c2NimConfigs:
     - rawNims: |
         import array_list
-  - cSourceModification: "'rcutils/types/string_map.h'"
+  - file: "'rcutils/types/string_map.h'"
     substitutes:
     - peg: "'rcutils_string_map_impl_s'"
       repl: "rcutils_string_map_impl_t"
@@ -98,7 +98,7 @@ imports:
         import ../allocator
         import ../types/array_list
 
-  - cSourceModification: "'rcutils/logging.h'"
+  - file: "'rcutils/logging.h'"
     deletes:
     - match: "'RCUTILS_LOGGING_AUTOINIT'"
     - match: "'RCUTILS_DEFAULT_LOGGER_DEFAULT_LEVEL'"
@@ -107,12 +107,12 @@ imports:
     - rawNims: |
         import ./time
         proc RCUTILS_LOGGING_AUTOINIT*() {.importc: "RCUTILS_LOGGING_AUTOINIT", header: "rcutils/logging.h".}
-  - cSourceModification: "'rcutils/isalnum_no_locale.h'"
+  - file: "'rcutils/isalnum_no_locale.h'"
     c2NimConfigs:
     - rawNims: |
         converter charToNum*(c: char): int = c.int 
 
-  - cSourceModification: "'.h'"
+  - file: "'.h'"
     deletes:
     - match: "'RCUTILS_STEADY_TIME'"
     substitutes:

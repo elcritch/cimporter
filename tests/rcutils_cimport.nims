@@ -21,6 +21,6 @@ cimport:
 
   sourceMods:list:
     item CSrcMods:
-      cSourceModification: peg"'rcutils/visibility_control.h'"
+      file: peg"'rcutils/visibility_control.h'"
 
   echo "config: ", config
