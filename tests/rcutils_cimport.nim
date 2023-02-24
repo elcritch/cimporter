@@ -1,9 +1,5 @@
 import cimporter/configure
 
-# var cimportList = ImporterConfig()
-proc cmodsImpl(): CSrcMods =
-  discard
-
 cimport:
   name: "rcutils"
   sources: "deps/rcutils/include"
@@ -20,7 +16,7 @@ cimport:
   renameFiles:listOf Replace:
     (pattern: peg"^'string.' .+", repl: "rstring$1")
   renameFiles:list:
-    item Replace:
+    fields Replace:
       pattern: peg"^'string.' .+"
       repl: "rstring$1"
 
@@ -33,7 +29,7 @@ cimport:
     cmods:
       fileMatch: peg"'rcutils/error_handling.h'"
       deletes:list:
-        item LineDelete:
+        fields LineDelete:
           match: peg"'make sure our math is right'"
           until: peg"'Maximum length calculations incorrect'"
           inclusive: true
@@ -48,14 +44,14 @@ cimport:
     cmods:
       fileMatch: peg"'rcutils/testing/fault_injection.h'"
       C2NimConfig:list:
-        item C2NimConfig:
+        fields C2NimConfig:
           fileContents: """
             #mangle "'_rcutils_fault_injection_maybe_fail'" "rcutils_fault_injection_maybe_fail"
             """
     cmods:
       fileMatch: peg"'rcutils/types/' !'rcutils_ret' .+"
       C2NimConfig:list:
-        item C2NimConfig:
+        fields C2NimConfig:
           fileContents: """
             #skipInclude
             """
@@ -66,14 +62,14 @@ cimport:
     cmods:
       fileMatch: peg"'rcutils/testing/fault_injection.h'"
       C2NimConfig:list:
-        item C2NimConfig:
+        fields C2NimConfig:
           fileContents: """
             #skipInclude
             """
     cmods:
       fileMatch: peg"'rcutils/types/array_list.h'"
       substitutes:list:
-        item Replace:
+        fields Replace:
           pattern: peg"'struct rcutils_array_list_impl_s;'"
           repl: """
               typedef struct rcutils_array_list_impl_s
@@ -85,7 +81,7 @@ cimport:
                 rcutils_allocator_t allocator;
               } rcutils_array_list_impl_t;
               """
-        item Replace:
+        fields Replace:
           pattern: peg"'rcutils_array_list_impl_s'"
           repl: "rcutils_array_list_impl_t"
 
