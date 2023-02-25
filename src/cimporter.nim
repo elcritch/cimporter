@@ -121,7 +121,7 @@ proc importproject(opts: CImporterOpts,
     obj.filterIt(f.endsWith(it.fileMatch))
 
   # Run pre-processor
-  var C2NimConfig: Table[string, seq[C2NimConfig]]
+  var C2NimConfig: Table[string, seq[C2NimCfg]]
   var ppFiles: seq[string]
   let skips = cfg.skipFiles.toHashSet()
   for f in files:
@@ -149,6 +149,7 @@ proc importproject(opts: CImporterOpts,
               ccpreprocess(f, ccopts, subs, dels, false)
     ppFiles.add(pf)
 
+    let c2mods = cfg.c2nimCfgs.fileMatches(f)
     let extras = mods.mapIt(it.c2NimConfig).concat()
     if extras.len() > 0:
       C2NimConfig[pf] = extras
