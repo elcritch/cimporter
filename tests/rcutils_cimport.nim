@@ -1,6 +1,6 @@
 import cimporter/configure
 
-addConfig:Item.CImport:
+addConfig:CImport:
   name: "rcutils"
   sources: "deps/rcutils/include"
   globs: ["**/*.h"]
@@ -21,27 +21,27 @@ addConfig:Item.CImport:
       repl: "rstring$1"
 
   sourceMods:list:
-    Item.cSrcMods:
+    cSrcMods:
       fileMatch: peg"'rcutils/visibility_control.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_PUBLIC'")
         LineDelete(match: peg"'RCUTILS_PUBLIC_TYPE'")
-    Item.cSrcMods:
+    cSrcMods:
       fileMatch: peg"'rcutils/error_handling.h'"
       deletes:list:
         item LineDelete:
           match: peg"'make sure our math is right'"
           until: peg"'Maximum length calculations incorrect'"
           inclusive: true
-    Item.cSrcMods:
+    cSrcMods:
       fileMatch: peg"'rcutils/macros.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_THREAD_LOCAL'")
-    Item.cSrcMods:
+    cSrcMods:
       fileMatch: peg"'rcutils/error_handling.h'"
       deletes:list:
         LineDelete(match: peg"'__STDC_WANT_LIB_EXT1__'")
-    Item.cSrcMods:
+    cSrcMods:
       fileMatch: peg"'rcutils/types/array_list.h'"
       substitutes:list:
         item Replace:
@@ -59,13 +59,13 @@ addConfig:Item.CImport:
         item Replace:
           pattern: peg"'rcutils_array_list_impl_s'"
           repl: "rcutils_array_list_impl_t"
-    Item.cSrcMods:
+    cSrcMods:
       fileMatch: peg"'test'"
       substitutes:list:
         item Replace:
           pattern: peg"'rcutils_array_list_impl_s'"
           repl: "rcutils_array_list_impl_t"
-    Item.cSrcMods:
+    cSrcMods:
       fileMatch: peg"'rcutils/types/hash_map.h'"
       substitutes:list:
         item Replace:
@@ -87,7 +87,7 @@ addConfig:Item.CImport:
               rcutils_allocator_t allocator;
             } rcutils_hash_map_impl_t;
             """
-    Item.cSrcMods:
+    cSrcMods:
       fileMatch: peg"'rcutils/types/string_map.h'"
       substitutes:list:
         item Replace:
@@ -106,28 +106,28 @@ addConfig:Item.CImport:
               rcutils_allocator_t allocator;
             } rcutils_string_map_impl_t;
             """
-    Item.cSrcMods:
+    cSrcMods:
       fileMatch: peg"'rcutils/logging.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_LOGGING_AUTOINIT'")
         LineDelete(match: peg"'RCUTILS_DEFAULT_LOGGER_DEFAULT_LEVEL'")
         LineDelete(match: peg"'g_rcutils_log_severity_names'")
-    Item.cSrcMods:
+    cSrcMods:
       fileMatch: peg"'.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_STEADY_TIME'")
       substitutes:list:
-        Item.Replaces:
+        Replaces:
           pattern: peg"'va_list' \\s+ '*'"
           repl: "va_list"
   
-  c2nimCfgs:list:
-    Item.c2Nims:
+  c2NimCfgs:list:
+    c2NimCfg:
       fileMatch: peg"'rcutils/testing/fault_injection.h'"
       fileContents: """
         #mangle "'_rcutils_fault_injection_maybe_fail'" "rcutils_fault_injection_maybe_fail"
         """
-    Item.c2Nims:
+    c2NimCfg:
       fileMatch: peg"'rcutils/types/' !'rcutils_ret' .+"
       fileContents: """
         #skipInclude
@@ -136,29 +136,29 @@ addConfig:Item.CImport:
         import rcutils_ret
         import ../allocator
         """
-    Item.c2Nims:
+    c2NimCfg:
       fileMatch: peg"'rcutils/testing/fault_injection.h'"
       fileContents: """
         #skipInclude
         """
-    Item.c2Nims:
+    c2NimCfg:
       fileMatch: peg"'rcutils/types/hash_map.h'"
       rawNims: """
         import array_list
         """
-    Item.c2Nims:
+    c2NimCfg:
       fileMatch: peg"'rcutils/types/string_map.h'"
       rawNims: """
         import ../allocator
         import ../types/array_list
         """
-    Item.c2Nims:
+    c2NimCfg:
       fileMatch: peg"'rcutils/logging.h'"
       rawNims: """
         import ./time
         proc RCUTILS_LOGGING_AUTOINIT*() {.importc: "RCUTILS_LOGGING_AUTOINIT", header: "rcutils/logging.h".}
         """
-    Item.c2Nims:
+    c2NimCfg:
       fileMatch: peg"'rcutils/isalnum_no_locale.h'"
       rawNims: """
         converter charToNum*(c: char): int = c.int 
