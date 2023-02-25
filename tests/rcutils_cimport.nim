@@ -1,6 +1,6 @@
 import cimporter/configure
 
-addConfig:cimport:
+addConfig:Item.CImport:
   name: "rcutils"
   sources: "deps/rcutils/include"
   globs: ["**/*.h"]
@@ -21,27 +21,27 @@ addConfig:cimport:
       repl: "rstring$1"
 
   sourceMods:list:
-    cmods:
+    Item.cSrcMods:
       fileMatch: peg"'rcutils/visibility_control.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_PUBLIC'")
         LineDelete(match: peg"'RCUTILS_PUBLIC_TYPE'")
-    cmods:
+    Item.cSrcMods:
       fileMatch: peg"'rcutils/error_handling.h'"
       deletes:list:
         item LineDelete:
           match: peg"'make sure our math is right'"
           until: peg"'Maximum length calculations incorrect'"
           inclusive: true
-    cmods:
+    Item.cSrcMods:
       fileMatch: peg"'rcutils/macros.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_THREAD_LOCAL'")
-    cmods:
+    Item.cSrcMods:
       fileMatch: peg"'rcutils/error_handling.h'"
       deletes:list:
         LineDelete(match: peg"'__STDC_WANT_LIB_EXT1__'")
-    cmods:
+    Item.cSrcMods:
       fileMatch: peg"'rcutils/types/array_list.h'"
       substitutes:list:
         item Replace:
@@ -59,13 +59,13 @@ addConfig:cimport:
         item Replace:
           pattern: peg"'rcutils_array_list_impl_s'"
           repl: "rcutils_array_list_impl_t"
-    cmods:
+    Item.cSrcMods:
       fileMatch: peg"'test'"
       substitutes:list:
         item Replace:
           pattern: peg"'rcutils_array_list_impl_s'"
           repl: "rcutils_array_list_impl_t"
-    cmods:
+    Item.cSrcMods:
       fileMatch: peg"'rcutils/types/hash_map.h'"
       substitutes:list:
         item Replace:
@@ -87,7 +87,7 @@ addConfig:cimport:
               rcutils_allocator_t allocator;
             } rcutils_hash_map_impl_t;
             """
-    cmods:
+    Item.cSrcMods:
       fileMatch: peg"'rcutils/types/string_map.h'"
       substitutes:list:
         item Replace:
@@ -106,28 +106,28 @@ addConfig:cimport:
               rcutils_allocator_t allocator;
             } rcutils_string_map_impl_t;
             """
-    cmods:
+    Item.cSrcMods:
       fileMatch: peg"'rcutils/logging.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_LOGGING_AUTOINIT'")
         LineDelete(match: peg"'RCUTILS_DEFAULT_LOGGER_DEFAULT_LEVEL'")
         LineDelete(match: peg"'g_rcutils_log_severity_names'")
-    cmods:
+    Item.cSrcMods:
       fileMatch: peg"'.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_STEADY_TIME'")
       substitutes:list:
-        replaces:
+        Item.Replaces:
           pattern: peg"'va_list' \\s+ '*'"
           repl: "va_list"
   
   c2nimCfgs:list:
-    C2Nims:
+    Item.c2Nims:
       fileMatch: peg"'rcutils/testing/fault_injection.h'"
       fileContents: """
         #mangle "'_rcutils_fault_injection_maybe_fail'" "rcutils_fault_injection_maybe_fail"
         """
-    C2Nims:
+    Item.c2Nims:
       fileMatch: peg"'rcutils/types/' !'rcutils_ret' .+"
       fileContents: """
         #skipInclude
@@ -136,29 +136,29 @@ addConfig:cimport:
         import rcutils_ret
         import ../allocator
         """
-    C2Nims:
+    Item.c2Nims:
       fileMatch: peg"'rcutils/testing/fault_injection.h'"
       fileContents: """
         #skipInclude
         """
-    C2Nims:
+    Item.c2Nims:
       fileMatch: peg"'rcutils/types/hash_map.h'"
       rawNims: """
         import array_list
         """
-    C2Nims:
+    Item.c2Nims:
       fileMatch: peg"'rcutils/types/string_map.h'"
       rawNims: """
         import ../allocator
         import ../types/array_list
         """
-    C2Nims:
+    Item.c2Nims:
       fileMatch: peg"'rcutils/logging.h'"
       rawNims: """
         import ./time
         proc RCUTILS_LOGGING_AUTOINIT*() {.importc: "RCUTILS_LOGGING_AUTOINIT", header: "rcutils/logging.h".}
         """
-    C2Nims:
+    Item.c2Nims:
       fileMatch: peg"'rcutils/isalnum_no_locale.h'"
       rawNims: """
         converter charToNum*(c: char): int = c.int 
