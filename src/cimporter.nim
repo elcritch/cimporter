@@ -128,7 +128,7 @@ proc importproject(opts: CImporterOpts,
     let relFile = f.relativePath(&"{cfg.sources}")
     if relFile in skips:
       continue
-    let mods = cfg.fileMatchs.fileMatches(f)
+    let mods = cfg.sourceMods.fileMatches(f)
     var subs: seq[(Peg, string)]
     for s in mods.mapIt(it.substitutes).concat():
       if s.comment: subs.add((s.pattern, "// !!!ignoring!!! $1"))
@@ -149,7 +149,7 @@ proc importproject(opts: CImporterOpts,
               ccpreprocess(f, ccopts, subs, dels, false)
     ppFiles.add(pf)
 
-    let extras = mods.mapIt(it.C2NimConfig).concat()
+    let extras = mods.mapIt(it.c2NimConfig).concat()
     if extras.len() > 0:
       C2NimConfig[pf] = extras
 
