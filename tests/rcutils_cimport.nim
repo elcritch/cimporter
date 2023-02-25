@@ -5,7 +5,7 @@ import pegs
 addConfig: item(ImportConfig):
   name: "rcutils"
   sources: "deps/rcutils/include"
-  globs ["**/*.h"]
+  globs: ["**/*.h"]
   skipFiles:list:
     "rcutils/stdatomic_helper/win32/stdatomic.h"
     "rcutils/stdatomic_helper/gcc/stdatomic.h"
@@ -15,8 +15,6 @@ addConfig: item(ImportConfig):
 
   renameFiles:list:
     Replace(pattern: peg"^'string.' .+", repl: "rstring$1")
-  renameFiles:listOf Replace:
-    (pattern: peg"^'string.' .+", repl: "rstring$1")
   renameFiles:list:
     - Replace:
       pattern: peg"^'string.' .+"
