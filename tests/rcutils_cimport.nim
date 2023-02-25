@@ -16,34 +16,34 @@ addConfig:CImport:
   renameFiles:listOf Replace:
     (pattern: peg"^'string.' .+", repl: "rstring$1")
   renameFiles:list:
-    item Replace:
+    - Replace:
       pattern: peg"^'string.' .+"
       repl: "rstring$1"
   sourceMods:list:
-    obj CSrcMods:
+    - CSrcMods:
       fileMatch peg"'rcutils/visibility_control.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_PUBLIC'")
         LineDelete(match: peg"'RCUTILS_PUBLIC_TYPE'")
-    cSrcMods:
+    - CSrcMods:
       fileMatch peg"'rcutils/error_handling.h'"
       deletes:list:
-        item LineDelete:
+        - LineDelete:
           match: peg"'make sure our math is right'"
           until: peg"'Maximum length calculations incorrect'"
           inclusive: true
-    cSrcMods:
+    - CSrcMods:
       fileMatch peg"'rcutils/macros.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_THREAD_LOCAL'")
-    cSrcMods:
+    - CSrcMods:
       fileMatch peg"'rcutils/error_handling.h'"
       deletes:list:
         LineDelete(match: peg"'__STDC_WANT_LIB_EXT1__'")
-    cSrcMods:
+    - CSrcMods:
       fileMatch peg"'rcutils/types/array_list.h'"
       substitutes:list:
-        item Replace:
+        - Replace:
           pattern: peg"'struct rcutils_array_list_impl_s;'"
           repl: """
               typedef struct rcutils_array_list_impl_s
@@ -55,22 +55,22 @@ addConfig:CImport:
                 rcutils_allocator_t allocator;
               } rcutils_array_list_impl_t;
               """
-        item Replace:
+        - Replace:
           pattern: peg"'rcutils_array_list_impl_s'"
           repl: "rcutils_array_list_impl_t"
-    cSrcMods:
+    - CSrcMods:
       fileMatch peg"'test'"
       substitutes:list:
-        item Replace:
+        - Replace:
           pattern: peg"'rcutils_array_list_impl_s'"
           repl: "rcutils_array_list_impl_t"
-    cSrcMods:
+    - CSrcMods:
       fileMatch peg"'rcutils/types/hash_map.h'"
       substitutes:list:
-        item Replace:
+        - Replace:
           pattern: peg"'rcutils_hash_map_impl_s'"
           repl: "rcutils_hash_map_impl_t"
-        item Replace:
+        - Replace:
           pattern: peg"'struct rcutils_hash_map_impl_s;'"
           repl: """
             typedef struct rcutils_hash_map_impl_s
@@ -86,13 +86,13 @@ addConfig:CImport:
               rcutils_allocator_t allocator;
             } rcutils_hash_map_impl_t;
             """
-    cSrcMods:
+    - CSrcMods:
       fileMatch peg"'rcutils/types/string_map.h'"
       substitutes:list:
-        item Replace:
+        - Replace:
           pattern: peg"'rcutils_string_map_impl_s'"
           repl: "rcutils_string_map_impl_t"
-        item Replace:
+        - Replace:
           pattern: peg"'struct rcutils_string_map_impl_s;'"
           repl:
             """
@@ -105,13 +105,13 @@ addConfig:CImport:
               rcutils_allocator_t allocator;
             } rcutils_string_map_impl_t;
             """
-    cSrcMods:
+    - CSrcMods:
       fileMatch peg"'rcutils/logging.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_LOGGING_AUTOINIT'")
         LineDelete(match: peg"'RCUTILS_DEFAULT_LOGGER_DEFAULT_LEVEL'")
         LineDelete(match: peg"'g_rcutils_log_severity_names'")
-    cSrcMods:
+    - CSrcMods:
       fileMatch peg"'.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_STEADY_TIME'")
