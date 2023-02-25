@@ -122,12 +122,12 @@ addConfig:cimport:
           repl: "va_list"
   
   c2nimCfgs:list:
-    c2nims:
+    C2Nims:
       fileMatch: peg"'rcutils/testing/fault_injection.h'"
       fileContents: """
         #mangle "'_rcutils_fault_injection_maybe_fail'" "rcutils_fault_injection_maybe_fail"
         """
-    c2nims:
+    C2Nims:
       fileMatch: peg"'rcutils/types/' !'rcutils_ret' .+"
       fileContents: """
         #skipInclude
@@ -136,29 +136,29 @@ addConfig:cimport:
         import rcutils_ret
         import ../allocator
         """
-    c2nims:
+    C2Nims:
       fileMatch: peg"'rcutils/testing/fault_injection.h'"
       fileContents: """
         #skipInclude
         """
-    c2nims:
+    C2Nims:
       fileMatch: peg"'rcutils/types/hash_map.h'"
       rawNims: """
         import array_list
         """
-    c2nims:
+    C2Nims:
       fileMatch: peg"'rcutils/types/string_map.h'"
       rawNims: """
         import ../allocator
         import ../types/array_list
         """
-    c2nims:
+    C2Nims:
       fileMatch: peg"'rcutils/logging.h'"
       rawNims: """
         import ./time
         proc RCUTILS_LOGGING_AUTOINIT*() {.importc: "RCUTILS_LOGGING_AUTOINIT", header: "rcutils/logging.h".}
         """
-    c2nims:
+    C2Nims:
       fileMatch: peg"'rcutils/isalnum_no_locale.h'"
       rawNims: """
         converter charToNum*(c: char): int = c.int 
