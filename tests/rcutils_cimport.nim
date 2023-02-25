@@ -116,7 +116,7 @@ addConfig: item(ImportConfig):
       deletes:list:
         LineDelete(match: peg"'RCUTILS_STEADY_TIME'")
       substitutes:list:
-        Replaces:
+        - Replace:
           pattern: peg"'va_list' \\s+ '*'"
           repl: "va_list"
   
