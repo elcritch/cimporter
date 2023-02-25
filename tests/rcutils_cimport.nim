@@ -1,8 +1,8 @@
 import cimporter/configure
 
-addConfig:CImport:
-  name "rcutils"
-  sources "deps/rcutils/include"
+addConfig: item(ImportConfig):
+  name: "rcutils"
+  sources: "deps/rcutils/include"
   globs ["**/*.h"]
   skipFiles:list:
     "rcutils/stdatomic_helper/win32/stdatomic.h"
