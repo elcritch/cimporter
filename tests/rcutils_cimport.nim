@@ -1,9 +1,9 @@
 import cimporter/configure
 
 addConfig:CImport:
-  name: "rcutils"
-  sources: "deps/rcutils/include"
-  globs: ["**/*.h"]
+  name "rcutils"
+  sources "deps/rcutils/include"
+  globs ["**/*.h"]
   skipFiles:list:
     "rcutils/stdatomic_helper/win32/stdatomic.h"
     "rcutils/stdatomic_helper/gcc/stdatomic.h"
@@ -22,27 +22,27 @@ addConfig:CImport:
 
   sourceMods:list:
     cSrcMods:
-      fileMatch: peg"'rcutils/visibility_control.h'"
+      fileMatch peg"'rcutils/visibility_control.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_PUBLIC'")
         LineDelete(match: peg"'RCUTILS_PUBLIC_TYPE'")
     cSrcMods:
-      fileMatch: peg"'rcutils/error_handling.h'"
+      fileMatch peg"'rcutils/error_handling.h'"
       deletes:list:
         item LineDelete:
           match: peg"'make sure our math is right'"
           until: peg"'Maximum length calculations incorrect'"
           inclusive: true
     cSrcMods:
-      fileMatch: peg"'rcutils/macros.h'"
+      fileMatch peg"'rcutils/macros.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_THREAD_LOCAL'")
     cSrcMods:
-      fileMatch: peg"'rcutils/error_handling.h'"
+      fileMatch peg"'rcutils/error_handling.h'"
       deletes:list:
         LineDelete(match: peg"'__STDC_WANT_LIB_EXT1__'")
     cSrcMods:
-      fileMatch: peg"'rcutils/types/array_list.h'"
+      fileMatch peg"'rcutils/types/array_list.h'"
       substitutes:list:
         item Replace:
           pattern: peg"'struct rcutils_array_list_impl_s;'"
@@ -60,13 +60,13 @@ addConfig:CImport:
           pattern: peg"'rcutils_array_list_impl_s'"
           repl: "rcutils_array_list_impl_t"
     cSrcMods:
-      fileMatch: peg"'test'"
+      fileMatch peg"'test'"
       substitutes:list:
         item Replace:
           pattern: peg"'rcutils_array_list_impl_s'"
           repl: "rcutils_array_list_impl_t"
     cSrcMods:
-      fileMatch: peg"'rcutils/types/hash_map.h'"
+      fileMatch peg"'rcutils/types/hash_map.h'"
       substitutes:list:
         item Replace:
           pattern: peg"'rcutils_hash_map_impl_s'"
@@ -88,7 +88,7 @@ addConfig:CImport:
             } rcutils_hash_map_impl_t;
             """
     cSrcMods:
-      fileMatch: peg"'rcutils/types/string_map.h'"
+      fileMatch peg"'rcutils/types/string_map.h'"
       substitutes:list:
         item Replace:
           pattern: peg"'rcutils_string_map_impl_s'"
@@ -107,13 +107,13 @@ addConfig:CImport:
             } rcutils_string_map_impl_t;
             """
     cSrcMods:
-      fileMatch: peg"'rcutils/logging.h'"
+      fileMatch peg"'rcutils/logging.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_LOGGING_AUTOINIT'")
         LineDelete(match: peg"'RCUTILS_DEFAULT_LOGGER_DEFAULT_LEVEL'")
         LineDelete(match: peg"'g_rcutils_log_severity_names'")
     cSrcMods:
-      fileMatch: peg"'.h'"
+      fileMatch peg"'.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_STEADY_TIME'")
       substitutes:list:
@@ -123,44 +123,44 @@ addConfig:CImport:
   
   c2NimCfgs:list:
     c2NimCfg:
-      fileMatch: peg"'rcutils/testing/fault_injection.h'"
-      fileContents: """
+      fileMatch peg"'rcutils/testing/fault_injection.h'"
+      fileContents """
         #mangle "'_rcutils_fault_injection_maybe_fail'" "rcutils_fault_injection_maybe_fail"
         """
     c2NimCfg:
-      fileMatch: peg"'rcutils/types/' !'rcutils_ret' .+"
-      fileContents: """
+      fileMatch peg"'rcutils/types/' !'rcutils_ret' .+"
+      fileContents """
         #skipInclude
         """
-      rawNims:"""
+      rawNims """
         import rcutils_ret
         import ../allocator
         """
     c2NimCfg:
-      fileMatch: peg"'rcutils/testing/fault_injection.h'"
-      fileContents: """
+      fileMatch peg"'rcutils/testing/fault_injection.h'"
+      fileContents """
         #skipInclude
         """
     c2NimCfg:
-      fileMatch: peg"'rcutils/types/hash_map.h'"
-      rawNims: """
+      fileMatch peg"'rcutils/types/hash_map.h'"
+      rawNims  """
         import array_list
         """
     c2NimCfg:
-      fileMatch: peg"'rcutils/types/string_map.h'"
-      rawNims: """
+      fileMatch peg"'rcutils/types/string_map.h'"
+      rawNims  """
         import ../allocator
         import ../types/array_list
         """
     c2NimCfg:
-      fileMatch: peg"'rcutils/logging.h'"
-      rawNims: """
+      fileMatch peg"'rcutils/logging.h'"
+      rawNims  """
         import ./time
         proc RCUTILS_LOGGING_AUTOINIT*() {.importc: "RCUTILS_LOGGING_AUTOINIT", header: "rcutils/logging.h".}
         """
     c2NimCfg:
-      fileMatch: peg"'rcutils/isalnum_no_locale.h'"
-      rawNims: """
+      fileMatch peg"'rcutils/isalnum_no_locale.h'"
+      rawNims  """
         converter charToNum*(c: char): int = c.int 
         """
 
