@@ -19,9 +19,8 @@ addConfig:CImport:
     item Replace:
       pattern: peg"^'string.' .+"
       repl: "rstring$1"
-
   sourceMods:list:
-    cSrcMods:
+    obj CSrcMods:
       fileMatch peg"'rcutils/visibility_control.h'"
       deletes:list:
         LineDelete(match: peg"'RCUTILS_PUBLIC'")
