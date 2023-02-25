@@ -121,12 +121,12 @@ addConfig: item(ImportConfig):
           repl: "va_list"
   
   c2NimCfgs:list:
-    c2NimCfg:
+    - C2NimCfg:
       fileMatch peg"'rcutils/testing/fault_injection.h'"
       fileContents """
         #mangle "'_rcutils_fault_injection_maybe_fail'" "rcutils_fault_injection_maybe_fail"
         """
-    c2NimCfg:
+    - C2NimCfg:
       fileMatch peg"'rcutils/types/' !'rcutils_ret' .+"
       fileContents """
         #skipInclude
@@ -135,29 +135,29 @@ addConfig: item(ImportConfig):
         import rcutils_ret
         import ../allocator
         """
-    c2NimCfg:
+    - C2NimCfg:
       fileMatch peg"'rcutils/testing/fault_injection.h'"
       fileContents """
         #skipInclude
         """
-    c2NimCfg:
+    - C2NimCfg:
       fileMatch peg"'rcutils/types/hash_map.h'"
       rawNims  """
         import array_list
         """
-    c2NimCfg:
+    - C2NimCfg:
       fileMatch peg"'rcutils/types/string_map.h'"
       rawNims  """
         import ../allocator
         import ../types/array_list
         """
-    c2NimCfg:
+    - C2NimCfg:
       fileMatch peg"'rcutils/logging.h'"
       rawNims  """
         import ./time
         proc RCUTILS_LOGGING_AUTOINIT*() {.importc: "RCUTILS_LOGGING_AUTOINIT", header: "rcutils/logging.h".}
         """
-    c2NimCfg:
+    - C2NimCfg:
       fileMatch peg"'rcutils/isalnum_no_locale.h'"
       rawNims  """
         converter charToNum*(c: char): int = c.int 
