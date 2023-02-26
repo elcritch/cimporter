@@ -4,8 +4,6 @@ import std/[tables, pegs]
 import cimporter/m4parser
 import cimporter/configure
 
-import nimscripter, nimscripter/variables
-
 # import toml_serialization
 import glob
 import print
@@ -190,31 +188,6 @@ proc importproject(opts: CImporterOpts,
     for c2n in c2nCleanup:
       echo "removing output file: ", c2n
       c2n.removeFile()
-
-import compiler/[ast]
-
-# proc toVm*[T: Peg](a: T): PNode = newStrNode(nkStrLit, a)
-proc fromVm*(t: typedesc[Peg], node: PNode): Peg =
-  if node.kind == nkStrLit:
-    peg(node.strVal)
-  else:
-    raise newException(VMParseError, "Cannot convert to: " & $t)
-
-proc runConfigScript*(path: string): ImporterConfig =
-
-  let
-    # scriptProcs = implNimScriptModule(scriptModule)
-    intr = loadScript(
-      NimScriptPath(path),
-      # stdPath = "stdlib/",
-      searchPaths = @["src"],
-      defines = @{"nimscript": "true",
-                  "nimconfig": "true",
-                  "nimscripter": "true"})
-  
-  getGlobalNimsVars intr:
-    cimportList = ImporterConfig()
-  result = cimportList
 
 
 proc runImports*(opts: var CImporterOpts) =
