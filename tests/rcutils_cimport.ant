@@ -162,8 +162,8 @@ addConfig: item(ImportConfig):
         converter charToNum*(c: char): int = c.int 
         """
 
-
-import json
-proc `%`(n: Peg): JsonNode = %($n)
-let res = % configs
-echo res.pretty()
+when isMainModule:
+  import json
+  proc `%`(n: Peg): JsonNode = %($n)
+  let res = % configs
+  echo res.pretty()
