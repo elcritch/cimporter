@@ -3,6 +3,7 @@ import std/[tables, pegs]
 
 import cimporter/m4parser
 import cimporter/configure
+import cimporter/options
 
 # import toml_serialization
 import glob
