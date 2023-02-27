@@ -1,4 +1,4 @@
 --d:debug
 --d:strip
 --opt:size
---d:nimOldCaseObjects
+# --d:nimOldCaseObjects
