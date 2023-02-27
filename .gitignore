@@ -1,6 +1,6 @@
-src/cimporter/m4parser
+/src/cimporter/m4parser
 *.pp
-src/cimporter.out
-cimporter
+/src/cimporter.out
+/cimporter
 *.pre
-tests/rcutils_cimport
+/tests/rcutils_cimport
