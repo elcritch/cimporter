@@ -1,11 +1,11 @@
 import std/[os, sequtils, osproc, strutils, strformat, sets, json]
 import std/[tables, pegs]
+import options
 
+import ants/configure
 import cimporter/m4parser
-import cimporter/configure
-import cimporter/options
+import cimporter/configs
 
-# import toml_serialization
 import glob
 import print
 
@@ -196,8 +196,7 @@ proc runImports*(opts: var CImporterOpts) =
   opts.proj = opts.proj.absolutePath().AbsDir
   if opts.projName == "":
     opts.projName = opts.proj.lastPathPart()
-  # let optsPath = opts.proj / opts.projName & ".cimport.yml"
-  let optsPath = opts.proj / opts.projName & "_cimport.nim"
+  let optsPath = opts.proj / opts.projName & ".ants"
   if opts.projC2Nim == "":
     opts.projC2Nim = opts.proj / opts.projName & ".c2nim"
   if not opts.projC2Nim.fileExists():
@@ -210,12 +209,12 @@ proc runImports*(opts: var CImporterOpts) =
   # var configs: ImporterConfig
   # var s = newFileStream(optsPath)
   # load(s, configs)
-  let configs = runConfigScript(optsPath)
+  let configs = ImporterConfig.antConfiguration(optsPath)
   # echo "config: ", $configs
   echo "configs: "
   # print configs
   # let skips = configs.skips.toHashSet()
-  for item in configs.imports:
+  for item in configs.cimports:
     var imp = item
     # echo "import: ", imp
     imp.outdir =  if imp.outdir.len() == 0: opts.proj / "src"
