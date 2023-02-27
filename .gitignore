@@ -5,3 +5,4 @@
 *.pre
 /tests/rcutils_cimport
 src/cimporter/configs
+/tests/rcutils
