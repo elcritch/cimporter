@@ -1,5 +1,5 @@
 import pegs, ants/language_v1
-export pegs
+export pegs, language_v1
 
 type
   ImporterConfig* = object
