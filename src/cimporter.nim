@@ -82,15 +82,15 @@ proc mkC2NimCmd(file: AbsFile,
   
 
 proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
-  let res = execProcesses(cmds, options = flags +
+  for cmd in cmds:
+    let res = execProcesses(@[cmd], options = flags +
                 {poParentStreams, poStdErrToStdOut, poEchoCmd})
-  if res != 0:
-    raise newException(ValueError, "c2nim failed")
-  echo "RESULT: ", res
+    if res != 0:
+      raise newException(ValueError, "c2nim failed")
+  # echo "RESULT: ", res
 
 proc importproject(opts: CImporterOpts,
-                    cfg: ImportConfig
-                    ) =
+                    cfg: ImportConfig) =
   createDir cfg.outdir
 
   echo "=== Importing Project ==="
@@ -133,14 +133,10 @@ proc importproject(opts: CImporterOpts,
       if s.comment: subs.add((s.pattern, "// !!!ignoring!!! $1"))
       else: subs.add((s.pattern, s.repl))
     
-    var dels: seq[(Peg, (Option[Peg], bool))]
-    for it in mods.mapIt(it.deletes).concat:
-      # hack for lack of option type
-      if $it.until == "":
-        dels.add( (it.match, (Peg.none, it.inclusive)) )
-      else:
-        dels.add( (it.match, (it.until.some, it.inclusive)) )
     let
+      dels: seq[(Peg, (Option[Peg], bool))] =
+        mods.mapIt(it.deletes).concat().
+        mapIt( (it.match, (it.until, it.inclusive)) )
       pf = if opts.skipPreprocess:
               copyFile(f, f & ".pp")
               f & ".pp"

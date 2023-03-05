@@ -214,12 +214,14 @@ proc process*(self: var PpParser,
         dels[i][2] = false
       
       if del[0] in a:
+        echo "DELINE: ", del[0], " => ", a
         dels[i][2] = true
     for d in dels:
       if d[2]: result = true
 
   
   echo "Processing: ", pth
+  echo "Dels: ", dels
   var
     isOrigSource = false
     isDelete = false
