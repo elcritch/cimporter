@@ -134,9 +134,7 @@ proc importproject(opts: CImporterOpts,
       else: subs.add((s.pattern, s.repl))
     
     let
-      dels: seq[(Peg, (Option[Peg], bool))] =
-        mods.mapIt(it.deletes).concat().
-        mapIt( (it.match, (it.until, it.inclusive)) )
+      dels = mods.mapIt(it.deletes).concat()
       pf = if opts.skipPreprocess:
               copyFile(f, f & ".pp")
               f & ".pp"

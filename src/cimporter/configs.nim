@@ -1,5 +1,5 @@
-import pegs, options, ants/language_v1
-export pegs, options, language_v1
+import pegs, options, ants/language_common
+export pegs, options
 
 type
   ImporterConfig* = object
@@ -40,4 +40,4 @@ type
     until*: Option[Peg]
     inclusive*: bool
 
-antStringify(Peg, `$`, peg)
+# antStringify(Peg, `$`, peg)

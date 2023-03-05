@@ -7,6 +7,7 @@ import std/[lexbase, streams]
 import std/[os, osproc, options]
 import std/[strformat, strutils]
 
+import configs
 import patty
 
 type
@@ -185,7 +186,7 @@ proc parseLine(self: var PpParser): SourceLine =
 proc process*(self: var PpParser,
               pth: string, output: File,
               subs: seq[(Peg, string)],
-              dels: seq[(Peg, (Option[Peg], bool))],
+              dels: seq[LineDelete],
               includes: seq[string],
               ) =
   ## Reads the next row; if `columns` > 0, it expects the row to have
@@ -194,34 +195,47 @@ proc process*(self: var PpParser,
   ##
   ## Blank lines are skipped.
 
+  type DeleteStates = ref object
+    cfg: LineDelete
+    state: bool
+  
   var
-    dels = dels.mapIt( (it[0], it[1], false) )
+    dels = dels.mapIt( DeleteStates(cfg: it, state: false) )
     includeSet = includes.toHashSet
   
   echo "includeSet: ", includeSet
 
-  proc delChecks(dels: var seq[(Peg,(Option[Peg],bool),bool)], a: string): bool =
+  proc delChecks(dels: var seq[DeleteStates], a: string): bool =
     for i in 0 ..< dels.len():
       let del = dels[i]
-      if del[1][0].isSome:
-        let untils = del[1][0].get()
+      if "__STDC_WANT_LIB_EXT1__" in a:
+        echo "\ndelChecks::", repr del, " line: ", a
+      if del.cfg.until.isSome:
+        let untils = del.cfg.until.get()
         if a.contains(untils):
-          dels[i][2] = false
-          if del[1][1] and del[2]:
+          del.state = false
+          if del.cfg.inclusive and del.state:
             result = true
           continue
       else:
-        dels[i][2] = false
+        if "__STDC_WANT_LIB_EXT1__" in a:
+          echo "delChecks:false", repr del
+        del.state = false
       
-      if del[0] in a:
-        echo "DELINE: ", del[0], " => ", a
-        dels[i][2] = true
+      if del.cfg.match in a:
+        if "__STDC_WANT_LIB_EXT1__" in a:
+          echo "delChecks:true"
+        echo "DELINE: ", del.cfg, " => ", a
+        del.state = true
+    # check all states
     for d in dels:
-      if d[2]: result = true
+      if d.state:
+        result = true
+        if "__STDC_WANT_LIB_EXT1__" in a:
+          echo "delChecks:found[2]:true"
 
   
   echo "Processing: ", pth
-  echo "Dels: ", dels
   var
     isOrigSource = false
     isDelete = false
@@ -253,6 +267,7 @@ proc process*(self: var PpParser,
     isDelete = dels.delChecks(line)
     if isOrigSource:
       if isDelete:
+        echo "DELLINE:SKIPPED"
         discard
       else:
         output.write(line.parallelReplace(subs))
@@ -263,7 +278,7 @@ proc close*(self: var PpParser) {.inline.} =
 
 proc stripheaders*(infile, prefile, ppfile: string,
                     subs: seq[(Peg, string)],
-                    dels: seq[(Peg, (Option[Peg], bool))],
+                    dels: seq[LineDelete],
                     includes: seq[string],
                   ) =
   var ss = newFileStream(prefile, fmRead)
@@ -279,7 +294,7 @@ proc stripheaders*(infile, prefile, ppfile: string,
 proc ccpreprocess*(infile: string,
                   ppoptions: CcPreprocOptions,
                   subs: seq[(Peg, string)],
-                  dels: seq[(Peg, (Option[Peg], bool))],
+                  dels: seq[LineDelete],
                   skipPP = false,
                   ): AbsFile =
   ## use C compiler to preprocess
@@ -319,8 +334,8 @@ proc run(
         ): AbsFile =
   echo "[importer] processing files: ", inputs
   var pp = CcPreprocOptions()
-  var subs: seq[(Peg, string)] = @[]
-  var dels: seq[(Peg, (Option[Peg], bool))] = @[]
+  var subs: seq[(Peg, string)]
+  var dels: seq[LineDelete]
   pp.cc = cc
   pp.flags = flags.split()
   for infile in inputs:
