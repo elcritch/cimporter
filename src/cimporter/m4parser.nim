@@ -208,8 +208,6 @@ proc process*(self: var PpParser,
   proc delChecks(dels: var seq[DeleteStates], a: string): bool =
     for i in 0 ..< dels.len():
       let del = dels[i]
-      if "__STDC_WANT_LIB_EXT1__" in a:
-        echo "\ndelChecks::", repr del, " line: ", a
       if del.cfg.until.isSome:
         let untils = del.cfg.until.get()
         if a.contains(untils):
@@ -218,21 +216,16 @@ proc process*(self: var PpParser,
             result = true
           continue
       else:
-        if "__STDC_WANT_LIB_EXT1__" in a:
-          echo "delChecks:false", repr del
         del.state = false
       
       if del.cfg.match in a:
-        if "__STDC_WANT_LIB_EXT1__" in a:
-          echo "delChecks:true"
-        echo "DELINE: ", del.cfg, " => ", a
         del.state = true
     # check all states
+    if result == true:
+      return
     for d in dels:
       if d.state:
         result = true
-        if "__STDC_WANT_LIB_EXT1__" in a:
-          echo "delChecks:found[2]:true"
 
   
   echo "Processing: ", pth
