@@ -1,13 +1,11 @@
 import std/[os, sequtils, osproc, strutils, strformat, sets, json]
 import std/[tables, pegs]
+import options
 
-import yaml
-import yaml/parser
-import yaml/stream
-import yaml/serialization, streams
-
+import ants/configure
 import cimporter/m4parser
-# import toml_serialization
+import cimporter/configs
+
 import glob
 import print
 
@@ -27,46 +25,6 @@ type
     noDefaultFlags: bool
     `include`: seq[string]
 
-  ImporterConfig* = object
-    imports: seq[ImportConfig]
-
-  ImportConfig* = object
-    name: string
-    sources: string
-    globs: seq[string]
-    skips {.defaultVal: @[].}: seq[string]
-    includes {.defaultVal: @[].}: seq[string]
-    defines {.defaultVal: @[].}: seq[string]
-    renames {.defaultVal: @[].}: seq[FileNameReplace]
-    outdir {.defaultVal: "".}: string
-    skipProjMangle {.defaultVal: false.}: bool
-    removeModulePrefixes {.defaultVal: "".}: string
-    cSourceModifications {.defaultVal: @[].}: seq[CSrcMods]
-  
-  CSrcMods* = object
-    cSourceModification*: Peg
-    substitutes {.defaultVal: @[].}: seq[SourceReplace]
-    deletes {.defaultVal: @[].}: seq[SourceDelete]
-    c2NimConfigs {.defaultVal: @[].}: seq[c2NimConfigs]
-
-  c2NimConfigs* = object
-    extraArgs* {.defaultVal: @[].}: seq[string]
-    fileContents* {.defaultVal: "".}: string
-    rawNims* {.defaultVal: "".}: string
-
-  SourceReplace* = object
-    peg*: Peg
-    repl* {.defaultVal: "".}: string
-    comment* {.defaultVal: false.}: bool
-  
-  FileNameReplace* = object
-    pattern*: Peg
-    repl*: string
-  
-  SourceDelete* = object
-    match*: Peg
-    until* {.defaultVal: Peg.none.}: Option[Peg]
-    inclusive* {.defaultVal: false.}: bool
 
 const defMangles = @[
   # handle expanded null pointers
@@ -81,13 +39,6 @@ const dflOpts* = CImporterOpts(
     noDefaultFlags: false,
     ccFlag: @["-CC","-dI","-dD"]
 )
-
-proc constructObject*(
-    s: var YamlStream, c: ConstructionContext, result: var Peg) =
-  constructScalarItem(s, item, Peg):
-    let s = item.scalarContent
-    try: result = peg(s)
-    except: raise newException(YamlConstructionError, "peg: " & getCurrentExceptionMsg())
 
 proc mkCmd(bin: string, args: openArray[string]): string =
   result = bin
@@ -110,8 +61,9 @@ proc mkC2NimCmd(file: AbsFile,
   let
     relfile = file.relativePath(cfg.sources)
     split = relfile.splitFile()
+    res = cfg.renameFiles.mapIt((it.pattern, it.repl))
     name = split.name.
-              parallelReplace(cfg.renames.mapIt((it.pattern, it.repl))).
+              parallelReplace(res).
               changeFileExt("nim")
     tgtfile = cfg.outdir / split.dir / name
     tgtParentFile = tgtfile.parentDir()
@@ -129,16 +81,22 @@ proc mkC2NimCmd(file: AbsFile,
   result = mkCmd("c2nim", post & mangles & files & extraArgs)
   
 
-proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
-  let res = execProcesses(cmds, options = flags +
+proc run(cmds: seq[string], flags: set[ProcessOption] = {}, sequential = true) =
+  if not sequential:
+    let res = execProcesses(cmds, options = flags +
                 {poParentStreams, poStdErrToStdOut, poEchoCmd})
-  if res != 0:
-    raise newException(ValueError, "c2nim failed")
-  echo "RESULT: ", res
+    if res != 0:
+      raise newException(ValueError, "c2nim failed")
+    echo "RESULT: ", res
+  else:
+    for cmd in cmds:
+      let res = execProcesses(@[cmd], options = flags +
+                  {poParentStreams, poStdErrToStdOut, poEchoCmd})
+      if res != 0:
+        raise newException(ValueError, "c2nim failed")
 
 proc importproject(opts: CImporterOpts,
-                    cfg: ImportConfig
-                    ) =
+                    cfg: ImportConfig) =
   createDir cfg.outdir
 
   echo "=== Importing Project ==="
@@ -165,33 +123,34 @@ proc importproject(opts: CImporterOpts,
   ccopts.defines.add cfg.defines
 
   template fileMatches(obj: untyped, f: string): auto =
-    obj.filterIt(f.endsWith(it.cSourceModification))
+    obj.filterIt(f.endsWith(it.fileMatch))
 
   # Run pre-processor
-  var c2NimConfigs: Table[string, seq[c2NimConfigs]]
+  var c2NimConfig: Table[string, seq[C2NimCfg]]
   var ppFiles: seq[string]
-  let skips = cfg.skips.toHashSet()
+  let skips = cfg.skipFiles.toHashSet()
   for f in files:
     let relFile = f.relativePath(&"{cfg.sources}")
     if relFile in skips:
       continue
-    let mods = cfg.cSourceModifications.fileMatches(f)
+    let mods = cfg.sourceMods.fileMatches(f)
     var subs: seq[(Peg, string)]
     for s in mods.mapIt(it.substitutes).concat():
-      if s.comment: subs.add((s.peg, "// !!!ignoring!!! $1"))
-      else: subs.add((s.peg, s.repl))
-    let dels = mods.mapIt(it.deletes.mapIt((it.match, (it.until, it.inclusive)))).concat()
-    let pf = 
-      if opts.skipPreprocess:
-        copyFile(f, f & ".pp")
-        f & ".pp"
-      else:
-        ccpreprocess(f, ccopts, subs, dels, false)
+      if s.comment: subs.add((s.pattern, "// !!!ignoring!!! $1"))
+      else: subs.add((s.pattern, s.repl))
+    
+    let
+      dels = mods.mapIt(it.deletes).concat()
+      pf = if opts.skipPreprocess:
+              copyFile(f, f & ".pp")
+              f & ".pp"
+            else:
+              ccpreprocess(f, ccopts, subs, dels, false)
     ppFiles.add(pf)
 
-    let extras = mods.mapIt(it.c2NimConfigs).concat()
+    let extras = cfg.c2nimCfgs.fileMatches(f)
     if extras.len() > 0:
-      c2NimConfigs[pf] = extras
+      c2NimConfig[pf] = extras
 
   # Run C2NIM
   var c2n: seq[string]
@@ -204,7 +163,7 @@ proc importproject(opts: CImporterOpts,
 
   for pp in ppFiles:
     var c2n = c2n
-    let c2extras = c2NimConfigs.getOrDefault(pp, @[])
+    let c2extras = c2NimConfig.getOrDefault(pp, @[])
     var extraArgs = c2extras.mapIt(it.extraArgs).concat().mapIt("--"&it)
     if cfg.removeModulePrefixes.len() > 0:
       let prefix = cfg.removeModulePrefixes %
@@ -237,7 +196,7 @@ proc runImports*(opts: var CImporterOpts) =
   opts.proj = opts.proj.absolutePath().AbsDir
   if opts.projName == "":
     opts.projName = opts.proj.lastPathPart()
-  let optsPath = opts.proj / opts.projName & ".cimport.yml"
+  let optsPath = opts.proj / opts.projName & ".ants"
   if opts.projC2Nim == "":
     opts.projC2Nim = opts.proj / opts.projName & ".c2nim"
   if not opts.projC2Nim.fileExists():
@@ -247,14 +206,15 @@ proc runImports*(opts: var CImporterOpts) =
 
   if not optsPath.fileExists():
     raise newException(ValueError, "couldn't find config file: " & optsPath)
-  var configs: ImporterConfig
-  var s = newFileStream(optsPath)
-  load(s, configs)
-  echo "config: ", configs
+  # var configs: ImporterConfig
+  # var s = newFileStream(optsPath)
+  # load(s, configs)
+  let configs = ImporterConfig.antConfiguration(optsPath)
+  # echo "config: ", $configs
   echo "configs: "
   # print configs
   # let skips = configs.skips.toHashSet()
-  for item in configs.imports:
+  for item in configs.cimports:
     var imp = item
     # echo "import: ", imp
     imp.outdir =  if imp.outdir.len() == 0: opts.proj / "src"

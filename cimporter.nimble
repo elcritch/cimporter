@@ -1,19 +1,21 @@
 # Package
 
-version       = "0.1.0"
+version       = "0.2.6"
 author        = "Jaremy Creechley"
 description   = "Import C projects using c2nim"
 license       = "MIT"
 srcDir        = "src"
 bin           = @["cimporter"]
+installExt = @["nim"]
 
 # Dependencies
 
 requires "nim >= 1.6"
 requires "c2nim >= 0.9.18"
 requires "cligen >= 1.5"
+requires "https://github.com/elcritch/ants >= 0.3.5"
+requires "msgpack4nim >= 0.4.0"
 requires "patty"
-requires "toml_serialization"
 requires "glob"
-requires "yaml"
 requires "print"
+# requires "yaml"
