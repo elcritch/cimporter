@@ -211,18 +211,17 @@ proc process*(self: var PpParser,
       if del.cfg.until.isSome:
         let untils = del.cfg.until.get()
         if a.contains(untils):
-          del.state = false
           if del.cfg.inclusive and del.state:
             result = true
+          del.state = false
           continue
       else:
         del.state = false
       
       if del.cfg.match in a:
         del.state = true
+    
     # check all states
-    if result == true:
-      return
     for d in dels:
       if d.state:
         result = true
@@ -260,7 +259,7 @@ proc process*(self: var PpParser,
     isDelete = dels.delChecks(line)
     if isOrigSource:
       if isDelete:
-        echo "DELLINE:SKIPPED"
+        echo "DELLINE:SKIPPED:: ", line
         discard
       else:
         output.write(line.parallelReplace(subs))
