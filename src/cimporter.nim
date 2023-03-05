@@ -81,13 +81,19 @@ proc mkC2NimCmd(file: AbsFile,
   result = mkCmd("c2nim", post & mangles & files & extraArgs)
   
 
-proc run(cmds: seq[string], flags: set[ProcessOption] = {}) =
-  for cmd in cmds:
-    let res = execProcesses(@[cmd], options = flags +
+proc run(cmds: seq[string], flags: set[ProcessOption] = {}, sequential = true) =
+  if not sequential:
+    let res = execProcesses(cmds, options = flags +
                 {poParentStreams, poStdErrToStdOut, poEchoCmd})
     if res != 0:
       raise newException(ValueError, "c2nim failed")
-  # echo "RESULT: ", res
+    echo "RESULT: ", res
+  else:
+    for cmd in cmds:
+      let res = execProcesses(@[cmd], options = flags +
+                  {poParentStreams, poStdErrToStdOut, poEchoCmd})
+      if res != 0:
+        raise newException(ValueError, "c2nim failed")
 
 proc importproject(opts: CImporterOpts,
                     cfg: ImportConfig) =
