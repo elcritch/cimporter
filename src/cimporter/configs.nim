@@ -40,7 +40,4 @@ type
     until*: Option[Peg]
     inclusive*: bool
 
-proc pack_type*[StringStream](s: StringStream, val: Peg) =
-  s.pack_type($val)
-proc unpack_type*[StringStream](s: StringStream, val: Peg) =
-  s.unpack_type($val)
+antStringify(Peg, `$`, peg)

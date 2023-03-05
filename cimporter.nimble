@@ -13,7 +13,7 @@ installExt = @["nim"]
 requires "nim >= 1.6"
 requires "c2nim >= 0.9.18"
 requires "cligen >= 1.5"
-requires "https://github.com/elcritch/ants >= 0.3.0"
+requires "https://github.com/elcritch/ants >= 0.3.3"
 requires "msgpack4nim >= 0.4.0"
 requires "patty"
 requires "glob"
