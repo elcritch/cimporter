@@ -30,7 +30,7 @@ antExport ImporterConfig:
         deletes:list:
           - LineDelete:
             match: peg"'make sure our math is right'"
-            until: some peg"'Maximum length calculations incorrect'"
+            until: peg"'Maximum length calculations incorrect'"
             inclusive: true
       - CSrcMods:
         fileMatch: peg"'rcutils/macros.h'"
