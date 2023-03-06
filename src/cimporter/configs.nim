@@ -15,6 +15,7 @@ type
     renameFiles*: seq[Replace]
     outdir*: string
     skipProjMangle*: bool
+    headerPrefix*: string
     removeModulePrefixes*: string
     sourceMods*: seq[CSrcMods]
     c2nimCfgs*: seq[C2NimCfg]

@@ -71,7 +71,8 @@ proc mkC2NimCmd(file: AbsFile,
                 changeFileExt("c2nim")
 
   createDir(tgtParentFile)
-  let post = @["--debug", "--header:\"" & file.splitFile().name & "\""] # modify progs
+  let hdr = "--header:\"" & cfg.headerPrefix & file.splitFile().name & "\""
+  let post = @["--debug", hdr] # modify progs
   var mangles = if cfg.skipProjMangle: @[""]
                 else: projMangles(cfg.name)
   mangles.add defMangles
