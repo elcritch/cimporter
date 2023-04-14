@@ -190,7 +190,7 @@ proc importproject(opts: CImporterOpts,
       extraArgs.add("--clibUserPragma")
       let hdrFile = cfg.headerPrefix & pp.splitFile().name
       c2rawNims.add(clibImportPragma % [
-        "NAME", cfg.name & "ImportDynamic",
+        "NAME", cfg.name & "Dynlib",
         "HEADER", hdrFile ])
     if c2files.len() > 0 or c2rawNims.len() > 0:
       let ppC2 = pp.changeFileExt(".c2nim")
