@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.2.9"
+version       = "0.2.10"
 author        = "Jaremy Creechley"
 description   = "Import C projects using c2nim"
 license       = "MIT"
