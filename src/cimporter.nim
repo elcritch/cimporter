@@ -32,6 +32,14 @@ const defMangles = @[
   "--mangle:'__nullptr'=NULL"
 ]
 
+const clibImportPragma = """
+const $NAME {.strdefine.}: string = ""
+when $NAME == "":
+  {.pragma: clib, header: "$HEADER" .}
+else:
+  {.pragma: clib, dynlib: "" & $NAME.}
+"""
+
 const dflOpts* = CImporterOpts(
     proj: "./",
     compiler: "cc",
@@ -54,7 +62,7 @@ proc projMangles(proj: string): seq[string] =
     result.add fmt"--mangle:'{p1}' {{\w+}}={pp}$1"
 
 proc mkC2NimCmd(file: AbsFile,
-                pre: seq[string],
+                extraFiles: (seq[string], seq[string]),
                 cfg: ImportConfig,
                 extraArgs: seq[string],
                 ): string =
@@ -71,13 +79,17 @@ proc mkC2NimCmd(file: AbsFile,
                 changeFileExt("c2nim")
 
   createDir(tgtParentFile)
-  let hdr = "--header:\"" & cfg.headerPrefix & file.splitFile().name & "\""
+  let hdrFile = cfg.headerPrefix & file.splitFile().name
+  let hdr = "--header:\"" & hdrFile & "\""
   let post = @["--debug", hdr] # modify progs
   var mangles = if cfg.skipProjMangle: @[""]
                 else: projMangles(cfg.name)
   mangles.add defMangles
-  let files = @[ &"--concat:all"] & pre &
-              @[ $file, "--out:" & tgtfile]
+  let files = @[ &"--concat:all"] &
+              extraFiles[0] &
+              @[ $file ] &
+              extraFiles[1] &
+              @[ "--out:" & tgtfile]
 
   result = mkCmd("c2nim", post & mangles & files & extraArgs)
   
@@ -171,15 +183,33 @@ proc importproject(opts: CImporterOpts,
                           [pp.splitFile().name.splitFile().name]
       extraArgs.add("--prefix:" & prefix)
     let c2files = c2extras.mapIt(it.fileContents).join("")
-    let c2rawNims = c2extras.mapIt(it.rawNims).join("")
+
+    ## add raw nim code (prefixed)
+    var c2rawNims = c2extras.mapIt(it.rawNims).join("")
+    if cfg.clibDynPragma:
+      extraArgs.add("--clibUserPragma")
+      let hdrFile = cfg.headerPrefix & pp.splitFile().name
+      c2rawNims.add(clibImportPragma % [
+        "NAME", cfg.name & "ImportDynamic",
+        "HEADER", hdrFile ])
     if c2files.len() > 0 or c2rawNims.len() > 0:
-      # echo "EXTRA C2N: ", pp
       let ppC2 = pp.changeFileExt(".c2nim")
       let raws = if c2rawNims.len() == 0: "" else: "#@\n" & c2rawNims & "\n@#"
       writeFile(ppC2 , c2files & raws)
       c2n.add ppC2
       c2nCleanup.add ppC2
-    cmds.add(mkC2NimCmd(pp, c2n, cfg, extraArgs))
+
+    ## add raw nim code (postfixed)
+    var c2nPost: seq[string]
+    let c2rawNimsPost = c2extras.mapIt(it.rawNimsPost).join("")
+    if c2rawNimsPost.len() > 0:
+      let ppC2 = pp.changeFileExt(".c2nim")
+      let raws = if c2rawNimsPost.len() == 0: "" else: "#@\n" & c2rawNimsPost & "\n@#"
+      writeFile(ppC2, raws)
+      c2n.add ppC2
+      c2nCleanup.add ppC2
+    cmds.add(mkC2NimCmd(pp, (c2n, c2nPost), cfg, extraArgs))
+
   # echo "C2NIM CMDS: ", cmds
   run cmds
 

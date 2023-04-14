@@ -12,7 +12,7 @@ installExt = @["nim"]
 
 requires "nim >= 1.6"
 # requires "c2nim >= 0.9.18"
-requires "https://github.com/elcritch/c2nim.git#allow-multiple-mangles"
+requires "https://github.com/elcritch/c2nim.git#pr-add-dual-import-pragma"
 requires "cligen >= 1.5"
 requires "ants >= 0.3.13"
 requires "msgpack4nim >= 0.4.0"

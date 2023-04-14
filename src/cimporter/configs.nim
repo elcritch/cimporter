@@ -16,6 +16,7 @@ type
     outdir*: string
     skipProjMangle*: bool
     headerPrefix*: string
+    clibDynPragma*: bool
     removeModulePrefixes*: string
     sourceMods*: seq[CSrcMods]
     c2nimCfgs*: seq[C2NimCfg]
@@ -30,6 +31,7 @@ type
     extraArgs*: seq[string]
     fileContents*: string
     rawNims*: string
+    rawNimsPost*: string
 
   Replace* = object
     pattern*: Peg
